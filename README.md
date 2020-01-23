@@ -1,0 +1,2 @@
+# kalkulacka
+Diagnostická kalkulačka
