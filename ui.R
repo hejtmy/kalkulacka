@@ -3,6 +3,7 @@ library(shiny)
 shinyUI(fluidPage(titlePanel(img(src="logo.png"), windowTitle="Diagnostická kalkulačka"),
                   navbarPage(title = "Diagnostická kalkulačka", 
                              theme = shinythemes::shinytheme("cerulean"),
+                             id = "panels",
                              
                              
 # Home page ---------------------------------------------------------------
@@ -11,35 +12,32 @@ tabPanel("Domů",
          withMathJax(),
          fluidRow(column(h2("Diagnostická kalkulačka"), 
                          p("Diagnostická kalkulačka zjednodušuje život všem psychologům, 
-                           kteří se v praxi zabývají", strong("psychologickým testováním"), 
-                           ". Nechte se provést intervaly spolehlivosti, kritickými skóry a 
+                           kteří se v praxi zabývají", strong("psychologickým testováním."), 
+                           "Nechte se provést intervaly spolehlivosti, kritickými skóry a 
                            dalšími otázkami z psychometrické problematiky."),
                          p("Pro používání diagnostické kalkulačky jsou potřeba jen",
-                           strong("minimální statistické znalosti"), 
-                           ". Podrobný návod vždy popíše, co a jak kam zadat, a jak výsledky interpretovat."),
+                           strong("minimální statistické znalosti."), 
+                           "Podrobný návod vždy popíše, co, jak a kam zadat, a rovněž jak výsledky interpretovat."),
                          width = 5),
                   column(h2("Profesionální výpočty"), 
                          p("Diagnostickou kalkulačku vyvíjí", 
-                           strong("psychometrický tým Katedry psychologie Fakulty sociálních studií"), 
-                           ". Dáváme k dispozici veškeré postupy našich výpočtů."),
-                         p("Zvláště u některých odhadů, využívajících principy", 
-                           strong("bayesovské statistiky"), 
-                           "je důležitý samotný návrh výpočtu - jiné způsoby odhadu mohou 
-                           poskytnout mírně odlišné výsledky. Bayesovská statistika, 
-                           kterou používáme, je ovšem přesnější a poskytuje i odhady pravděpodobnosti, 
-                           s jakou dané hypotézy platí."),
+                           strong("psychometrický tým Katedry psychologie Fakulty sociálních studií."), 
+                           "K veškerým výpočtům je k dispozici podrobný postup, kód této kalkulačk je", 
+                           a("veřejně dostupný.", href="https://github.com/hynekcigler/kalkulacka")),
+                         p("Ve stručnosti jsou jednotlivé postupy popsány i v zápatí každé kalkulačky tak, 
+                           aby běžný uživatel měl alespoň orientační přehled nad všemi funkcemi."),
                          width = 5))),
 
 
 # Confidence interval -----------------------------------------------------
 
-tabPanel("Interval spolehlivosti",
+tabPanel("Interval spolehlivosti", value = "CI",
          titlePanel("Výpočet chyby měření a intervalu spolehlivosti"),
   sidebarLayout(
   
-  # Application title
-    
-  
+
+# * sidebar CI ------------------------------------------------------------
+
   sidebarPanel(  
     radioButtons(inputId="CI_scale", label="",
                  choices = list("IQ skóry (100, 15)" = "IQ",
@@ -82,9 +80,12 @@ tabPanel("Interval spolehlivosti",
       checkboxInput(inputId="CI_regrese", label = "Regrese k průměru.", TRUE)
     )
   ), 
-  
+
+
+# * mainpanel CI ----------------------------------------------------------
+
   mainPanel(
-    h5(verbatimTextOutput("text_CI1")),
+    (htmlOutput("text_CI1", placeholder=NULL)),
     plotOutput("plot_CI"),
     h3("Nápověda"),
     HTML("<p>Tato kalkulačka vypočítá interval spolehlivosti jednoho skóre při jednom měření, 
@@ -99,6 +100,7 @@ tabPanel("Interval spolehlivosti",
          <p><em><strong>Upozornění:</strong> Použitý výpočet je založen na postupu klasické testové teorie. 
          Výpočet není vhodný pro testy, které byly konstruované s využití teorie odpovědi na položku nebo Raschova modelu 
          (u nás např. Woodcock-Johnson či Krátký inteligenční test.</em></p>"),
+    hr(),
     h3("Postup odhadu"),
     HTML("<p>Standardní chybu měření označovanou jako \\(SE\\) (&bdquo;Standard Error of measurement&ldquo;) 
     lze odhadnout pomocí vzorce
@@ -116,15 +118,16 @@ tabPanel("Interval spolehlivosti",
          a průměrné skóre nemá na výpočet vliv; naopak pokud by reliabilita byla nulová, pak by na výpočet nemělo vliv 
          pozorované skóre a odhad pravého skóre by byl shodný s populačním průměrem.
          </p>", 
-         "Posledním krokem je odhad vlastního intervalu spolehlivosti \\(CI\\) (&bdquo;Confidence Interval&ldquo;). 
+         "<p>Posledním krokem je odhad vlastního intervalu spolehlivosti \\(CI\\) (&bdquo;Confidence Interval&ldquo;). 
          Ten je odhadnut okolo odhadu pravého skóre \\(E(T)\\)
          (je-li tato funkce vypnutá, pak přímo okolo skóre pozorovaného \\(X\\)) jako 
          $$CI_{w} = E(T) \\pm z_{w}SE$$
          kde \\(w\\) označuje šířku intervalu (např. v procentech) 
          a \\(z_{w}\\) je příslušný kvantil normální rozdělení. Pro běžné hodnoty je tento kvantil roven 
-         \\(z_{90\\%}=1,64\\), \\(z_{95\\%}=1,96\\) a \\(z_{99\\%}=2,58\\).",
-         "<br />"),
+         \\(z_{90\\%}=1,64\\), \\(z_{95\\%}=1,96\\) a \\(z_{99\\%}=2,58\\).</p>"),
     
+    HTML("<p>Autorem kalkulačky je Hynek Cígler (&copy; 2020) s mírným přispěním Martina Šmíry.</p>"),
+    hr(),
     h4("Zdroje"),
     HTML("<ul><li>Cígler, H., & Šmíra, M. (2015). 
          Chyba měření a odhad pravého skóru: Připomenutí některých postupů Klasické testové teorie. 
@@ -135,14 +138,111 @@ tabPanel("Interval spolehlivosti",
          <i>Psychological Bulletin 86</i>(2), 335-337. 
          doi:<a href='https://doi.org/10.5817/10.1037/0033-2909.86.2.335'>10.1037/0033-2909.86.2.335</a></li></ul>")
   )
-)
+)),
 
 
-),
-                             tabPanel("Kritický skór"),
-                             tabPanel("Převod skórů")
-                  ), 
+# Převod skórů ------------------------------------------------------------
+
+tabPanel("Převod skórů", 
+         titlePanel("Převod mezi skóry"), 
+         sidebarLayout(
+
+# * sidebar ---------------------------------------------------------------
+
+           sidebarPanel(
+             selectInput("test", "Vyberte vstupní skór", 
+                         list( "z-skóre" = "z",
+                               "IQ skóre" = "iq",
+                               "T-skóre" = "t",
+                               "standardní (Wechslerovo) skóre" = "wech",
+                               "percentil" = "perc",
+                               "sten" = "sten",
+                               "stanin" = "stanin")),
+             
+             conditionalPanel(
+               condition = "input.test == 'z'", 
+               numericInput("zValue", "Zadejte z-skóre", value=0, step=.2)
+             ),
+             conditionalPanel(
+               condition = "input.test == 't'", 
+               numericInput("tValue", "Zadejte T-skóre", value=50, step=1)
+             ),
+             conditionalPanel(
+               condition = "input.test == 'wech'", 
+               numericInput("wechValue", "Standardní (Wechslerovo) skóre", value=10, step=1)
+             ),
+             conditionalPanel(
+               condition = "input.test == 'perc'", 
+               numericInput("percValue", "Zadejte percentil", value=50, min=1, max=100, step=1)
+             ),
+             conditionalPanel(
+               condition = "input.test == 'sten'", 
+               numericInput("stenValue", "Zadejte sten", value=5, min=1, max=10)
+             ),
+             conditionalPanel(
+               condition = "input.test == 'iq'", 
+               numericInput("iqValue", "Zadejte IQ skóre", value=100, min=1, max=200, step=1)
+             ),
+             conditionalPanel(
+               condition = "input.test == 'stanin'", 
+               numericInput("staninValue", "Zadejte stanin", value=5, min=1, max=9)
+             ),
+             
+             checkboxInput("zaokrouhlit", "Zaokrouhlit skóre na celá čísla"),
+             conditionalPanel(
+               condition = "input.test == 'sten' || input.test == 'stanin'", 
+               checkboxInput("procentoMasy", "Spočítat procento pod křivkou", value = T)
+             )
+             ),
+
+
+# * mainpanel -------------------------------------------------------------
+
+
+           mainPanel(
+             tableOutput("trans_vystup"),
+             textOutput("trans_warn"),
+             plotOutput("trans_graf", width="auto"),
+             h3("Nápověda"),
+             HTML("<p>Tato kalkulačka převádí běžná skóre používaná v psychologické diagnostice. 
+                  Do vstupního pole zadejte skóre a vyberte jeho typ. Pamatujte, že některé skóry mají možný rozsah!
+                  Dále si můžete vybrat zaokrouhlení. Protože steny a staniny nejsou bodovým odhadem, ale z definice 
+                  reprezentují určitý rozsah možných hodnot, lze při jejich výběru zobrazit i podíl respondentů, 
+                  kteří mají určité stenové či staninové skóre.</p>", 
+                  "<h4>Použité skóry a jejich parametry</h4>", 
+                  "<table class='table shiny-table table- spacing-s' style='width:auto; text-align: center;'>
+                  <thead><tr><th>skóre</th><th style='text-align: center;'>průměr</th>
+                             <th style='text-align: center;'>směrodatná odchylka</th>
+                             <th style='text-align: center;'>minimum</th>
+                             <th style='text-align: center;'>maximum</th>
+                             <th style='text-align: center;'>typ</th></tr></thead>
+                  <tfoot><td colspan = 6 style='text-align: left; max-width: 0px;'>
+                  <small><sup>a</sup> zpravidla.<br />
+                  <em>Poznámky:</em> typ standardní &ndash; převod pomocí lineární transformace;
+                  typ plošný &ndash; převod zpravidla pomocí plošné transformace za předpokladu normálního rozložení. 
+                  NA &ndash; není definováno. Kromě z-skóre jsou všechny jednotky zaokrouhlovány zpravidla na celá čísla 
+                  (včetně stenů a staninů, což vede k zaokrouhlení průměrného z-skóre 0 na &bdquo;nadprůměrnou&ldquo; 
+                  stenovou hodnotu 6); z-skóre bývají zaokrouhlována na dvě desetinná místa.
+                  </small></td></tfoot>
+                  <tbody>
+                  <tr><th>z-skóre</th><td>0</td><td>1</td><td>NA</td><td>NA</td><td>standardní</td></tr>
+                  <tr><th>IQ skóre</th><td>100</td><td>15</td><td>NA</td><td>NA</td><td>standardní</td></tr>
+                  <tr><th>percentil</th><td>NA</td><td>NA</td><td>0</td><td>100</td><td>plošný</td></tr>
+                  <tr><th>T-skóre</th><td>50</td><td>10</td><td>NA</td><td>NA</td><td>standardní</td></tr>
+                  <tr><th>Wechslerovo (vážené) skóre</th><td>10</td><td>3</td><td>0<sup>a</sup></td><td>20<sup>a</sup></td><td>standardní</td></tr>
+                  <tr><th>steny</th><td>5,5</td><td>2</td><td>1</td><td>10</td><td>plošný</td></tr>
+                  <tr><th>staniny</th><td>5</td><td>2</td><td>1</td><td>9</td><td>standardní</td></tr>
+
+                  </tbody>
+                  </table>"),
+             hr(),
+             HTML("<p>Autorem této kalkulačky je Martin Šmíra (&copy; 2014) s mírným přispěním Hynka Cíglera.</p>")
+           )
+         )),
+
+
+tabPanel("Kritický skór")), 
 hr(),
-HTML("<div style = 'margin-left: 30px;'>&copy; 2020 Hynek Cígler & Martin Šmíra<br />
+HTML("<div style = 'margin-left: 30px; margin-bottom: 30px;'>&copy; 2020 Hynek Cígler & Martin Šmíra<br />
      Katedra psychologie, Fakulta sociálních studií<br />
      Masarykova univerzita</div>")))
