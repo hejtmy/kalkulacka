@@ -1,4 +1,9 @@
 library(shiny)
+library(shinyWidgets)
+
+inline_numericInput=function(ni){
+  tags$div( class="form-inline",ni)
+}
 
 shinyUI(fluidPage(titlePanel(img(src="logo.png"), windowTitle="Diagnostická kalkulačka"),
                   navbarPage(title = "Diagnostická kalkulačka", 
@@ -39,35 +44,34 @@ tabPanel("Interval spolehlivosti", value = "CI",
 # * sidebar CI ------------------------------------------------------------
 
   sidebarPanel(  
-    radioButtons(inputId="CI_scale", label="",
+    radioButtons(inputId="CI_scale", label="Vyberte použité skóre:",
                  choices = list("IQ skóry (100, 15)" = "IQ",
                                 "T skóry (50, 10)" = "T",
                                 "z-skóry (0, 1)" = "z", 
                                 "Vážené skóry (10, 3)" = "W",
                                 "Percentily" = "P",
                                 "jiné" = "jednotka")),
-    
-    numericInput("CI_reliability", "reliabilita:", 0.8, min=0, max=1, step=0.05),  
-    
-    conditionalPanel(condition = "input.CI_scale == 'IQ'", 
-                     numericInput("CI_score_IQ", "skór:", 100)),
-    conditionalPanel(condition = "input.CI_scale == 'T'", 
-                     numericInput("CI_score_T", "skór:", 50)),
-    conditionalPanel(condition = "input.CI_scale == 'z'", 
-                     numericInput("CI_score_z", "skór:", 0)),
-    conditionalPanel(condition = "input.CI_scale == 'W'", 
-                     numericInput("CI_score_W", "skór:", 10)),
-    conditionalPanel(condition = "input.CI_scale == 'P'", 
-                     numericInput("CI_score_P", "skór:", 50)),
-    conditionalPanel(condition = "input.CI_scale == 'jednotka'", 
-                     numericInput("CI_score_jine", "skór:", 100)),
     conditionalPanel(condition = "input.CI_scale == 'jednotka'",
                      numericInput("CI_M_manual", "Zadejte průměr:", value = 100),
                      numericInput("CI_SD_manual", "Zadejte směrodatnou odchylku:", value = 15)),
+    
+    numericInput("CI_reliability", "reliabilita testu:", 0.8, min=0, max=1, step=0.05),  
+    
+    conditionalPanel(condition = "input.CI_scale == 'IQ'", 
+                     numericInput("CI_score_IQ", "pozorované skóre:", 100)),
+    conditionalPanel(condition = "input.CI_scale == 'T'", 
+                     numericInput("CI_score_T", "pozorované skóre:", 50)),
+    conditionalPanel(condition = "input.CI_scale == 'z'", 
+                     numericInput("CI_score_z", "pozorované skóre:", 0)),
+    conditionalPanel(condition = "input.CI_scale == 'W'", 
+                     numericInput("CI_score_W", "pozorované skóre:", 10)),
+    conditionalPanel(condition = "input.CI_scale == 'P'", 
+                     numericInput("CI_score_P", "pozorované skóre:", 50)),
+    conditionalPanel(condition = "input.CI_scale == 'jednotka'", 
+                     numericInput("CI_score_jine", "pozorované skóre:", 100)),
     wellPanel(
-      h4("Pokročilé nastavení"),
-      h5("Šířka intervalu spolehlivosti"),
-      radioButtons(inputId="CI_width", label="",
+      h5("Pokročilé nastavení"),
+      radioButtons(inputId="CI_width", label="Šířka CI",
                    choices=list("90%" = 90,
                                 "95%" = 95,
                                 "99%" = 99,
@@ -93,7 +97,20 @@ tabPanel("Interval spolehlivosti", value = "CI",
          <p>Zvolte jednotky, ve kterých je test vyhodnocen, a zvolte rovněž reliabilitu testu, který používáte. 
          V pokročilém nastavení následně můžete zvolit šířku intervalu spolehlivosti. 
          Můžete si rovněž zvolit, zda chcete aplikovat regresi k průměru (tedy sestrojit interval spolehlivosti 
-         kolem odhadu pravého skóre), nebo nikoli (a interval sestrojit okolo skóre pozorovaného).</p>
+         kolem odhadu pravého skóre), nebo nikoli (a interval sestrojit okolo skóre pozorovaného). 
+         Ačkoli regrese k průměru je doporučovaným postupem (Dudek, 1979; Cígler a Šmíra, 2015), jeho předpokladem je, že 
+         klient byl &bdquo;náhodně&ldquo; vybrán z populace o daném průměru. Naneštěstí, tento předpoklad zpravidla 
+         neplatí v běžném klinickém prostředí, v pedagogicko-psychologických poradnách apod. V takovém případě máte 
+         na výběr v zásadě tři možnosti:</p>
+         <ol><li>I přes to použít regresi k průměru. Takový závěr je &bdquo;konzervativnější&ldquo;. V takové situaci předpokádáte,
+                 že klient pochází z běžné populace.</li>
+             <li>Regresi k průměru nepoužít. Tento postup a-priori neklade žádné předpoklady o skóre klienta, může však vést 
+                 k extrémnějším závěrům, interval spolehlivosti bude posunutý směrem k extrémům.</li>
+             <li>Zvolit si apriorní rozložení sám/sama. V takovém případě jako typ skóre vyberte <em>jiné</em>. 
+                 Jako směrodatnou odchylku uveďte směrodatnou odchylku používaných skórů (tedy např. 15 pro IQ či 10 pro T-skóre), 
+                 jako střední hodnotu uveďte vámi očekávaný skór, kterého respondent dosáhne. Jinými slovy: tipněte si výkon klienta 
+                 a tento svůj tip dosaďte na místo průměru. Tento poslední postup by měl vést k nejadekvátnějšímu odhadu intervalu 
+                 spolehlivosti.</li></ol>
          <p>Pokud jste zadali skóre v percentilech, jsou tyto percentily prvně převedeny na z-skóre, 
          následně jsou provedeny veškeré výpočty a jejich výsledky (kromě standardní chyby měření) jsou převedeny zpět 
          na percentil.</p>
@@ -241,7 +258,131 @@ tabPanel("Převod skórů",
          )),
 
 
-tabPanel("Kritický skór")), 
+# Složené skóre -----------------------------------------------------------
+
+tabPanel("Složené skóre", 
+         titlePanel("Práce se složeným skóre"), 
+
+# * sidebar ---------------------------------------------------------------
+
+         sidebarLayout(
+           sidebarPanel(
+             radioButtons(inputId="SS_scale", label="Vyberte použité skóre:",
+                          choices = list("IQ skóry (100, 15)" = "IQ",
+                                         "T skóry (50, 10)" = "T",
+                                         "z-skóry (0, 1)" = "z", 
+                                         "Vážené skóry (10, 3)" = "W",
+                                         "Percentily" = "P",
+                                         "jiné" = "jednotka")),
+             conditionalPanel(condition = "input.SS_scale == 'jednotka'",
+                              numericInput("SS_M_manual", "Zadejte průměr:", value = 100),
+                              numericInput("SS_SD_manual", "Zadejte směrodatnou odchylku:", value = 15)),
+             radioButtons(inputId="SS_apriori", label = "Typ apriorní informace:", 
+                          choices = list("populační" = "populace", 
+                                         "žádná" = "no", 
+                                         "vlastní" = "user")),
+             conditionalPanel(condition = "input.SS_apriori == 'user'",
+                              numericInput("SS_odhad", "Váš odhad skóre:", value = NA)#,
+                              # sliderInput("SS_jistota", 
+                              #             label = "Jaká je vaše jistota (%)?", value = 50, 
+                              #             min = 0, max = 100, step = 1, ticks = T),
+                              # HTML("<p><strong>Míru jistoty nedoporučujeme měnit, pokud si nejste jisti, co děláte! 
+                              #       Toto může silně ovlivnit odhadované výsledky.</strong><br />
+                              #      <small>0 % &ndash; je použit desetinásobek směrodatné odchylky rozložení (velmi slabý prior).<br />
+                              #      50 % &ndash; je použita směrodatná odchylka (běžný prior, shodné s nastavením apriorní informace na populační průměr).<br />
+                              #      100 % &ndash; je použita desetina směrodatné odchylky (velmi silný prior).</small></p>")
+                              ),
+
+             tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                      numericInput("SS1", label = "skóre 1:", value = NA)),
+             tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                      numericInput("RR1", label = "reliabilita", value = NA, min = 0, max = 1)),
+             
+             conditionalPanel("(input.SS1 !== null) && (input.RR1 > 0)", 
+                              HTML("<p><small>Pokud u druhého a dalšího testu nezadáte reliabilitu, 
+                                   použije se reliabilita prvního testu.</small></p>"), 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS2", label = "skóre 2:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR2", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS2 !== null",
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS3", label = "skóre 3:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR3", label = "reliabilita", value = NA, min = 0, max = 1))),       
+             
+             conditionalPanel("input.SS3 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS4", label = "skóre 4:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR4", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS4 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS5", label = "skóre 5:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR5", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS5 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS6", label = "skóre 6:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR6", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS6 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS7", label = "skóre 7:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR7", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS7 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS8", label = "skóre 8:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR8", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS8 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS9", label = "skóre 9:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR9", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             
+             conditionalPanel("input.SS9 !== null", 
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("SS10", label = "skóre 10:", value = NA)),
+                              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+                                       numericInput("RR10", label = "reliabilita", value = NA, min = 0, max = 1))), 
+             conditionalPanel("input.SS10 !== null", 
+                              HTML("<p><em>Dosáhli jste maximálního počtu deseti testů.</em></p>")), 
+             
+             numericInput("SS_p", label = "Statistická významnost", value = .05, min = 0, max=1)
+
+
+             
+             
+             
+             
+             
+             ),
+
+# * mainpanel -------------------------------------------------------------
+
+           mainPanel(tableOutput("SS_table"),
+                     p("wkejwk"),
+                     plotOutput("SS_CIplot"),
+                     tableOutput("SS_result"),
+                     tableOutput("SS_x2")
+                     
+                     
+                     
+                     
+                     )
+
+
+
+         ))
+), 
 hr(),
 HTML("<div style = 'margin-left: 30px; margin-bottom: 30px;'>&copy; 2020 Hynek Cígler & Martin Šmíra<br />
      Katedra psychologie, Fakulta sociálních studií<br />

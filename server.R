@@ -419,6 +419,268 @@ shinyServer(function(input, output, session) {
       
       p
     })
+    
+
+# Kombinace skórů ---------------------------------------------------------
+    
+    SS_z <- reactive(-qnorm(input$SS_p/2))
+    
+    SS_use <- reactive({scores <- cbind(input$SS1,
+                                        input$SS2,
+                                        input$SS3,
+                                        input$SS4,
+                                        input$SS5,
+                                        input$SS6,
+                                        input$SS7,
+                                        input$SS8,
+                                        input$SS9,
+                                        input$SS10) 
+    !is.na(scores)})
+    
+    SS_scores <- reactive({scores <- cbind(input$SS1,
+                                           input$SS2,
+                                           input$SS3,
+                                           input$SS4,
+                                           input$SS5,
+                                           input$SS6,
+                                           input$SS7,
+                                           input$SS8,
+                                           input$SS9,
+                                           input$SS10)
+    scores <- scores[SS_use()]})
+    SS_rels <- reactive({rels <- cbind(input$RR1,
+                                       input$RR2,
+                                       input$RR3,
+                                       input$RR4,
+                                       input$RR5,
+                                       input$RR6,
+                                       input$RR7,
+                                       input$RR8,
+                                       input$RR9,
+                                       input$RR10)
+    rels <- rels[SS_use()]
+    rels[is.na(rels)] <- rels[1]
+    rels})
+
+    ## převede vše na z-skóre
+    SS_zscore <- reactive({
+      if (input$SS_scale == "IQ") {
+        scores <- (SS_scores()-100)/15
+      } else if (input$SS_scale == "T") {
+        scores <- (SS_scores()-50)/10
+      } else if (input$SS_scale == "z") {
+        scores <- SS_scores()
+      } else if (input$SS_scale == "W") {
+        scores <- (SS_scores()-10)/3
+      } else if (input$SS_scale == "jednotka") {
+        scores <- (SS_scores() - input$SS_M_manual)/input$SS_SD_manual
+      } else {
+        scores <- SS_scores()
+        scores[scores == 0] <- 0.25
+        scores[scores == 100] <- 99.75
+        scores <- qnorm(scores/100)
+      }
+      scores
+    })
+    
+    SS_SE <- reactive({
+      sqrt(1-SS_rels())
+      
+    })
+    
+    SS_CItable <- reactive({
+      out <- data.frame(test = paste0("[", c(1:length(SS_zscore())), "]"),
+                        z=SS_zscore(), r=SS_rels(), SE=SS_SE(), SEt = SS_SE()*sqrt(SS_rels()),
+                        CI_low = SS_zscore() - SS_z()*SS_SE(), 
+                        CI_up = SS_zscore() + SS_z()*SS_SE())
+      if (input$SS_scale == "IQ") {
+        out$X <- iqOut(out$z)
+        out$X_CI_low <- iqOut(out$CI_low)
+        out$X_CI_up <- iqOut(out$CI_up)
+      } else if (input$SS_scale == "T") {
+        out$X <- tOut(out$z)
+        out$X_CI_low <- tOut(out$CI_low)
+        out$X_CI_up <- tOut(out$CI_up)
+      } else  if (input$SS_scale == "z") {
+        out$X <- (out$z)
+        out$X_CI_low <- (out$CI_low)
+        out$X_CI_up <- (out$CI_up)
+      } else if (input$SS_scale == "W") {
+        out$X <- wechOut(out$z)
+        out$X_CI_low <- wechOut(out$CI_low)
+        out$X_CI_up <- wechOut(out$CI_up)
+      } else if (input$SS_scale == "jednotka") {
+        out$X <- out$z * input$SS_SD_manual + input$SS_M_manual
+        out$X_CI_low <- out$CI_low * input$SS_SD_manual + input$SS_M_manual
+        out$X_CI_up <- out$CI_up * input$SS_SD_manual + input$SS_M_manual
+      } else {
+        out$X <- pnorm(out$z)
+        out$X_CI_low <- pnorm(out$CI_low)
+        out$X_CI_up <- pnorm(out$CI_up)
+      }
+      
+      out$CI = paste0("[", round(out$CI_low, 2), "; ", round(out$CI_up, 2), "]")
+      out$X_CI = paste0("[", round(out$X_CI_low, 2), "; ", round(out$X_CI_up, 2), "]")
+      out
+    })
+    
+
+    SS_result <- reactive({
+      if (input$SS_apriori == "populace") {
+        estimates <- SS_CItable()$r[1]*SS_CItable()$z[1]
+        SE <- SS_CItable()$SE[1]
+        SE_true <- SS_CItable()$SE[1] * sqrt(SS_CItable()$r[1])
+        apriori_odhad <- 0
+      } else if (input$SS_apriori == "no") {
+        estimates <- SS_CItable()$z[1]
+        SE <- SS_CItable()$SE[1]
+        SE_true <- SS_CItable()$SE[1]
+        apriori_odhad <- NA
+      } else {
+        if (input$SS_scale == "IQ") {
+          apriori_odhad <- (input$SS_odhad-100)/15
+        } else if (input$SS_scale == "T") {
+          apriori_odhad <- (input$SS_odhad-50)/10
+        } else if (input$SS_scale == "z") {
+          apriori_odhad <- input$SS_odhad
+        } else if (input$SS_scale == "W") {
+          apriori_odhad <- (input$SS_odhad-10)/3
+        } else if (input$SS_scale == "jednotka") {
+          apriori_odhad <- (input$SS_odhad - input$SS_M_manual)/input$SS_SD_manual
+        } else {
+          apriori_odhad <- input$SS_odhad
+          apriori_odhad[apriori_odhad == 0] <- 0.25
+          apriori_odhad[apriori_odhad == 100] <- 99.75
+          apriori_odhad <- qnorm(apriori_odhad/100)
+        }
+        estimates <- SS_CItable()$r[1]*SS_CItable()$z[1] + (1-SS_CItable()$r[1])*apriori_odhad
+        SE <- SS_CItable()$SE[1]
+        SE_true <- sqrt(SS_CItable()$r[1]) * SE
+        
+      }
+      
+      if (SE_true < .5) {
+        r_obs <- (1+sqrt(1-4*SE_true**2))/2
+      } else {
+        r_obs <- (1-sqrt(1-4*SE_true**2))/2 
+      }
+      
+
+      
+      result <- data.frame(apriori = apriori_odhad, est=estimates, SE=SE, SE_true = SE_true, r = r_obs)
+      
+      i <- 2
+      while(i <= nrow(SS_CItable())) {
+        apriori_x <- result$est[i-1]
+        est_x <- (SS_CItable()$SE[i]**2)/(SS_CItable()$SE[i]**2 + result$SE_true[i-1]**2) * apriori_x + 
+          (result$SE_true[i-1]**2)/(SS_CItable()$SE[i]**2 + result$SE_true[i-1]**2) * SS_CItable()$z[i]
+        SE_x <- SS_CItable()$SE[i]
+        SE_true_x <- 1/sqrt(1/SE_x**2 + 1/result$SE_true[i-1]**2)
+        if (SE_true_x < .5) {
+          r_x <- (1+sqrt(1-4*SE_true_x**2))/2
+        } else {
+          r_x <- (1-sqrt(1-4*SE_true_x**2))/2 
+        }
+        
+        result <- rbind(result, c(apriori_x, est_x, SE_x, SE_true_x, r_x))
+        i <- i+1
+      }
+      
+      result$CI_low <- result$est - SS_z()*result$SE_true
+      result$CI_up <- result$est + SS_z()*result$SE_true
+      
+      if (input$SS_scale == "IQ") {
+        result$X <- iqOut(result$est)
+        result$X_CI_low <- iqOut(result$CI_low)
+        result$X_CI_up <- iqOut(result$CI_up)
+      } else if (input$SS_scale == "T") {
+        result$X <- tOut(result$est)
+        result$X_CI_low <- tOut(result$CI_low)
+        result$X_CI_up <- tOut(result$CI_up)
+      } else  if (input$SS_scale == "z") {
+        result$X <- (result$est)
+        result$X_CI_low <- (result$CI_low)
+        result$X_CI_up <- (result$CI_up)
+      } else if (input$SS_scale == "W") {
+        result$X <- wechOut(result$est)
+        result$X_CI_low <- wechOut(result$CI_low)
+        result$X_CI_up <- wechOut(result$CI_up)
+      } else if (input$SS_scale == "jednotka") {
+        result$X <- result$est * input$SS_SD_manual + input$SS_M_manual
+        result$X_CI_low <- result$CI_low * input$SS_SD_manual + input$SS_M_manual
+        result$X_CI_up <- result$CI_up * input$SS_SD_manual + input$SS_M_manual
+      } else {
+        result$X <- pnorm(result$est)
+        result$X_CI_low <- pnorm(result$CI_low)
+        result$X_CI_up <- pnorm(result$CI_up)
+      }
+      
+      result
+      
+
+
+    })
+    
+    SS_ylims <- reactive({
+      if (input$SS_scale == "P") {
+        c(0, 1)
+      } else {
+        c(floor(min(SS_CItable()$X_CI_low)), ceiling(max(SS_CItable()$X_CI_up)))
+      }
+    })
+    
+    SS_x2 <- reactive({
+      # x2 <- sum(((SS_CItable()$X-mean(SS_CItable()$X)) / SS_CItable()$SE)**2)
+      # x2 <- sum(((SS_CItable()$X-mean(SS_CItable()$X))/SS_CItable()$SE)**2)
+      
+      M <- weighted.mean(SS_CItable()$z, 1/SS_CItable()$SE**2)
+      x2 <- sum(((SS_CItable()$z - M)/SS_CItable()$SE)**2)
+      df <- nrow(SS_CItable()) - 1
+      p <- pchisq(x2, df, lower.tail = F)
+      data.frame(M=M, x2=x2, df=df, p=p)
+    })
+    
+    
+    
+
+# * output ----------------------------------------------------------------
+
+
+    
+    output$SS_table <- renderTable({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0)) {
+        SS_CItable()
+      }
+    })
+    
+    output$SS_CIplot <- renderPlot({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0)) {
+        plot(SS_CItable()$X, type="b", xlab = "test", ylab = "skóre", lwd = 3, pch = 16, col = "darkorange", 
+             ylim = SS_ylims(), xlim = c(1, nrow(SS_result())+.2), xaxt="n")
+        abline(h = weighted.mean(SS_CItable()$X, 1/SS_CItable()$SE**2), col= "gray", lty=2, lwd=2)
+        arrows(x0 = c(1:nrow(SS_CItable())), y0 = SS_CItable()$X_CI_low, y1 = SS_CItable()$X_CI_up, 
+               angle = 90, code = 3, lwd=2, length = .1)
+        points(SS_CItable()$X, lwd = 3, pch = 21, bg = "darkorange", col = "white", cex = 3)
+        arrows(x0 = c(1:nrow(SS_CItable()))+.05, y0=SS_result()$X_CI_low, y1=SS_result()$X_CI_up, 
+               angle = 90, code = 3, lwd=1, length = .1)
+        lines(c(1:nrow(SS_CItable()))+.05, SS_result()$X, type="b", lwd = 3, pch = 21, bg = "darkblue", col = "darkgray", cex = 3)
+        points(c(1:nrow(SS_CItable()))+.05, SS_result()$X, lwd = 3, pch = 21, bg = "darkblue", col = "white", cex = 3)
+
+      }
+    })
+    
+    output$SS_result <- renderTable({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0)) {
+        SS_result()
+      }
+
+    })
+    
+    output$SS_x2 <- renderTable({
+      SS_x2()
+    })
+
+    
   
   
   
