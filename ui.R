@@ -91,6 +91,7 @@ tabPanel("Interval spolehlivosti", value = "CI",
   mainPanel(
     (htmlOutput("text_CI1", placeholder=NULL)),
     plotOutput("plot_CI"),
+    hr(),
     h3("Nápověda"),
     HTML("<p>Tato kalkulačka vypočítá interval spolehlivosti jednoho skóre při jednom měření, 
          pokud znáte reliabilitu testu. </p>
@@ -277,26 +278,11 @@ tabPanel("Složené skóre",
              conditionalPanel(condition = "input.SS_scale == 'jednotka'",
                               numericInput("SS_M_manual", "Zadejte průměr:", value = 100),
                               numericInput("SS_SD_manual", "Zadejte směrodatnou odchylku:", value = 15)),
-             radioButtons(inputId="SS_apriori", label = "Typ apriorní informace:", 
-                          choices = list("populační" = "populace", 
-                                         "žádná" = "no", 
-                                         "vlastní" = "user")),
-             conditionalPanel(condition = "input.SS_apriori == 'user'",
-                              numericInput("SS_odhad", "Váš odhad skóre:", value = NA)#,
-                              # sliderInput("SS_jistota", 
-                              #             label = "Jaká je vaše jistota (%)?", value = 50, 
-                              #             min = 0, max = 100, step = 1, ticks = T),
-                              # HTML("<p><strong>Míru jistoty nedoporučujeme měnit, pokud si nejste jisti, co děláte! 
-                              #       Toto může silně ovlivnit odhadované výsledky.</strong><br />
-                              #      <small>0 % &ndash; je použit desetinásobek směrodatné odchylky rozložení (velmi slabý prior).<br />
-                              #      50 % &ndash; je použita směrodatná odchylka (běžný prior, shodné s nastavením apriorní informace na populační průměr).<br />
-                              #      100 % &ndash; je použita desetina směrodatné odchylky (velmi silný prior).</small></p>")
-                              ),
 
              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                       numericInput("SS1", label = "skóre 1:", value = NA)),
              tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                      numericInput("RR1", label = "reliabilita", value = NA, min = 0, max = 1)),
+                      numericInput("RR1", label = "reliabilita", value = NA, min = 0, max = 1, step = .01)),
              
              conditionalPanel("(input.SS1 !== null) && (input.RR1 > 0)", 
                               HTML("<p><small>Pokud u druhého a dalšího testu nezadáte reliabilitu, 
@@ -304,59 +290,67 @@ tabPanel("Složené skóre",
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS2", label = "skóre 2:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR2", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR2", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS2 !== null",
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS3", label = "skóre 3:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR3", label = "reliabilita", value = NA, min = 0, max = 1))),       
+                                       numericInput("RR3", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))),       
              
              conditionalPanel("input.SS3 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS4", label = "skóre 4:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR4", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR4", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS4 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS5", label = "skóre 5:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR5", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR5", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS5 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS6", label = "skóre 6:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR6", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR6", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS6 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS7", label = "skóre 7:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR7", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR7", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS7 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS8", label = "skóre 8:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR8", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR8", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS8 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS9", label = "skóre 9:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR9", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR9", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              
              conditionalPanel("input.SS9 !== null", 
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
                                        numericInput("SS10", label = "skóre 10:", value = NA)),
                               tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
-                                       numericInput("RR10", label = "reliabilita", value = NA, min = 0, max = 1))), 
+                                       numericInput("RR10", label = "reliabilita", value = NA, min = 0, max = 1, step = .01))), 
              conditionalPanel("input.SS10 !== null", 
                               HTML("<p><em>Dosáhli jste maximálního počtu deseti testů.</em></p>")), 
              
-             numericInput("SS_p", label = "Statistická významnost", value = .05, min = 0, max=1)
+             checkboxInput("advanced", "Pokročilé možnosti"),
+             conditionalPanel("input.advanced == 1", 
+                              numericInput("SS_p", label = "Statistická významnost", value = .05, min = 0, max=1, step = .01),
+                              radioButtons(inputId="SS_apriori", label = "Typ apriorní informace:", 
+                                           choices = list("populační" = "populace", 
+                                                          "žádná" = "no", 
+                                                          "vlastní" = "user")),
+                              conditionalPanel(condition = "input.SS_apriori == 'user'",
+                                               numericInput("SS_odhad", "Váš odhad skóre:", value = NA)))
 
 
              
@@ -368,22 +362,123 @@ tabPanel("Složené skóre",
 
 # * mainpanel -------------------------------------------------------------
 
-           mainPanel(tableOutput("SS_table"),
-                     p("wkejwk"),
-                     plotOutput("SS_CIplot"),
-                     tableOutput("SS_result"),
-                     tableOutput("SS_x2")
-                     
-                     
-                     
-                     
+           mainPanel(h3(textOutput("SS_warning1"), style = "color: red;"),
+                     h3(textOutput("SS_warning2"), style = "color: red;"),
+                     h4("Tabulka 1: Výsledné skóre"),
+                     p({textOutput("SS_warning3", inline = T)}, 
+                       style = "color: red;"),
+                     tableOutput("SS_x2"),
+                     p(tags$small("odhad – odhad výsledného skóre na základě všech testů. 
+                          CI – výsledný interval spolehlivosti;", br(),
+                          "x2, df, p – test dobré shody (s testovou statistikou x2 a počtem stupňů volnosti df), 
+                          zda se jednotlivé testové výsledky neliší. Pokud je test signifikantní 
+                          (p je menší než zvolená hodnota ", textOutput("SS_pout", inline = T),
+                                  "), pak nelze výsledné kombinované skóre interpretovat.")),
+                     fluidRow(column(h4("Tabulka 2: Chyby měření jednotlivých testů"),
+                                     tableOutput("SS_table"),
+                                     HTML("<p><small>X – pozorované skóre
+                                          r – reliabilita testu; 
+                                          SE – standardní chyba měření; 
+                                          CI – interval spolehlivosti.<br />
+                                          Žádný z údajů nezohledňuje ostatní testy, týká se vždy jen daného testu. 
+                                          Při výpočtu není zohledněna regrese k průměru.</small></p>"),
+                                     plotOutput("SS_CIplot"), 
+                                     width = 6),
+                              column(h4("Tabulka 3: Vývoj chyb měření"),
+                                     tableOutput("SS_result"),
+                                     HTML("<p><small>X &ndash; odhad skóre u n-tého testu; SE = chyba měření daného testu; 
+                                          SE_true &ndash; chyba odhadu s využitím všech dosavadních testů; 
+                                          CI &ndash; interval měření, které využívá všechny dosavadní testy.</small></p>"),
+                                     plotOutput("SS_goplot"),
+                                     width = 6)),
+
+                     hr(),
+                     h3("Nápověda"),
+                     p("Tato kalkulačka nabízí možnost &bdquo;zkombinovat&ldquo; více testů tak, aby uživatel 
+                          získal jediný skór s jediným intervalem spolehlivosti. Vyberte si požadovanou jednotku, kterou používáte 
+                       (všechny testy musí být zadané ve shodných jednotkách) a zadejte skóre a reliabilitu prvního testu. 
+                       Poté se zobrazí pole pro zadání pozorovaného skóre a reliability druhého testu, a tak dál; 
+                       celkem lze zadat až 10 separátních testových výsledků."), 
+                     p("V nabídce pokročilé možnosti máte zároveň možnost změnit hladinu spolehlivosti použitou pro všechny výpočty, 
+                       a rovněž apriorní informaci.", strong("Nedoporučujeme měnit apriorní informaci, pokud si nejste zcela jisti, 
+                                                        že víte, co děláte!"), 
+                       "Apriorní informace určuje průměr populace, ze které je proband vybrán. Je-li vybrán z běžné populace, 
+                       je nejvhodnějším řešením ponechat původní nastavení (populační apriorní informace). V tomto případě je 
+                       použita regrese k průměrnému skóru. Tuto funkci lze vypnout nastavením žádné apriorní informace; skóre 
+                       prvního testu v takovémto případě není přibližováno k průměrnému skóre. Třetí možnost je nastavit 
+                       vlastní apriorní informaci. V takovém případě můžete ", em("„zpřesnit“"), 
+                       "výsledky vyšetření vaším odhadem. Zadejte do apriorní informace váš expertní odhad, jakého výsledku 
+                       by měl proband dosáhnout. Výsledný odhad bude o něco blíže k této hodnotě, než by odpovídalo naměřenému 
+                       skóre."),
+                     p("V tabulce 1 naleznete zkombinované výsledky jednotlivých testů. Ve sloupci odhad je výsledný bodový odhad 
+                       respondentova skóre, ve sloupci CI naleznete příslušný interval spolehlivosti.", br(), 
+                       "ve sloupcích x2, df a p jsou výsledky testu dobré shody ověřujícího, zda se jednotlivé testové výsledky 
+                       statisticky významně neliší. Pokud ano, nelze kombinované skóre bezpečně interpretovat."),
+                     p("V tabulce 2 jsou k dispozici výsledky pro jednotlivé pozorované skóry: X jsou právě tyto skóry, 
+                       r zadané reliability, SE chyby měření a CI intervaly spolehlivosti. Upozorňujeme, že tyto intervaly spolehlivosti 
+                       byly odhadnuty bez využití regrese k průměru; nedoporučujeme je individuálně interpretovat. V grafické 
+                       podobě jsou tyto výsledky pak na gafu níže-"),
+                     p("Tabulka 3 potom předkládá vývoj, jak se postupně chyby měření zužovaly. N prvním řádku jsou výsledky po 
+                       vyhodnocení prvního testu; na druhém po vyhodnocení druhého testu a tak dále. X, SE, a r jsou 
+                       pozorované skóre, chyba měření a reliabilita daného testu (bez zohlednění ostatních měření). 
+                       Naopak ve sloupcích X, SE_true a CI je výsledná odhadovaná hodnota pravého skóre, jeho chyba odhadu 
+                        a příslušný interval spolehlivosti, pokud bereme v úvahu výsledek daného testu i všechna předchozí měření."),
+                     p(strong("Upozornění:"), 
+                        "Použitý výpočet je založen na postupu klasické testové teorie. Výpočet není vhodný pro testy, 
+                       které byly konstruované s využití teorie odpovědi na položku nebo Raschova modelu 
+                       (u nás např. Woodcock-Johnson či Krátký inteligenční test."),
+                     hr(),
+                     checkboxInput("showmethod", "Zobrazit postup výpočtu", value = F), 
+                     conditionalPanel(
+                       "input.showmethod == 1", 
+                       h3("Postup odhadu"),
+                       p("Námi použitý postup kombinuje Bayesovský a tradiční, frekventistický způsob odhadu. 
+                         Výpočet pracuje se z-skóry - všechny ostatní jednotky jsou úvodem převedeny právě na z-skór a po ukončení 
+                         všech výpočtů jsou veškeré hodnoty transformovány zpět na původní škálu. 
+                         V prvním kroku je proveden odhad pravého skóre E(T) podle vzorce 
+                         $$E(T) = r_{xx'}X + (1-r_{xx'})M$$
+                         kde \\(r_{xx'}\\) je reliabilita, \\(M\\) uživatelem zadaná apriorní informace a \\(X\\) skóre pozorované. 
+                         Protože pracujeme se z-skóry, v případě použití populační apriorní informace platí  \\(M=0\\). v případě žádné apriorní informace 
+                         je tento krok přeskočen a namísto odhadu pravého skóre je použit přímo pozorovaný skór."),
+                       p("Následně je odhadnuta standardní chyba měření \\(SE\\) podle vzorce
+                         $$SE = SD\\sqrt{1-r_{xx'}}$$
+                         kde \\(SD\\) je směrodatná odchylka a \\(r_{xx'}\\) je reliabilita testu. Kromě toho je odhadnuta ještě i 
+                         chyba odhadu pravého skóre \\(SE_{T}\\) jako 
+                         $$SE_{T} = \\sqrt{r_{xx'}}SE$$", 
+                         "pro účely dalších výpočtů. V případě druhého a dalších měření je použit odlišný postup. 
+                         Odhad pravého skóre \\(i\\)-tého testu \\(E(T_{i})\\) je proveden jako posteriorní odhad podle vzorce 
+                         $$E(T_{i}) = \\frac{SE_i^2}{SE_i^2 + SE_{T,i-1}^2}E(T_{i-1}) + \\frac{SE_{T,i-1}^2}{SE_i^2 + SE_{T,i-1}^2}X_i$$
+                         kde \\(SE_i^2\\) je standardní chyba měření \\(i\\)-tého testu, \\(SE_{T,i-1}\\) je standardní chyba odhadu 
+                         pravého skóre s využitím všech předchozích testů \\(i-1\\), \\(E(T_{i-1})\\) jeho bodový odhad a konečně \\(X_i\\) skóre 
+                         pozorované v testu \\(i\\). Chyba tohoto odhadu je spočítána pomocí vzorce 
+                         $$SE_{T, i} = \\sqrt{\\frac1{SE_{T, i}^2} + \\frac1{SE_{T, i-1}^2}}^{-1}$$"), 
+                       p("S pomocí této chyby odhadu je zpětně odhadnuta reliabilita všech testů \\(r_{ii'}\\) jako 
+                         $$r_{ii'} = 1 + \\frac{\\sqrt{1-4SE_{T, i}^2}}{2}$$ 
+                         Tento vzorec bohužel není identifikovaný, pokud \\(r_{ii'} \\leq 0,5\\). V takovém případě je uživatel 
+                         upozorněn."),
+                       p("Poslední důležitý výpočet je statisticky významný rozdíl jednotlivých testů navzájem. Ten je odhadnut pomocí 
+                         testu dobré shode, kdy testová statistika má hodnotu
+                         
+                         $$\\chi^2=\\sum_{i=1}^{n} \\frac{(X_i-E(X))^2}{SE_i^2}$$
+                         
+                         s přibližně \\(\\chi^2\\) rozložením a \\(n-1\\) stupni volnosti, kde \\(n\\) udává počet zadaných testů. 
+                         \\(E(X)\\) je potom očekávané skóre, odhadnuté jako vážený průměr všech dílčích testů 
+                         $$E(X)=\\frac{\\sum_{i=1}^{n} SE_i^{-2}X_i}{\\sum_{i=1}^{n}SE_i^{-2}}$$"))
+
                      )
 
 
 
-         ))
+         )),
+
+# Rozdílové skóry -----------------------------------------------------------
+
+tabPanel("Rozdílové skóry", 
+         titlePanel("Statisticky a klinicky významná změna"))
+
 ), 
 hr(),
-HTML("<div style = 'margin-left: 30px; margin-bottom: 30px;'>&copy; 2020 Hynek Cígler & Martin Šmíra<br />
-     Katedra psychologie, Fakulta sociálních studií<br />
-     Masarykova univerzita</div>")))
+div("©", textOutput("yearcopy", inline = T), "Hynek Cígler & Martin Šmíra", br(),
+"Katedra psychologie, Fakulta sociálních studií", br(),
+     "Masarykova univerzita | ", tags$a("kalkulacka@testforum.cz", href="mailto:kalkulacka@testforum.cz"), 
+    style = 'margin-left: 30px; margin-bottom: 30px;')))

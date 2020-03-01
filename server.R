@@ -88,6 +88,8 @@ staninOut <- function(zSkor) {
 
 shinyServer(function(input, output, session) {
   
+  output$yearcopy <- renderText(substr(Sys.Date(), 1, 4))
+  
 
 # Interval spolehlivosti --------------------------------------------------
   
@@ -489,10 +491,11 @@ shinyServer(function(input, output, session) {
     })
     
     SS_CItable <- reactive({
-      out <- data.frame(test = paste0("[", c(1:length(SS_zscore())), "]"),
+      out <- data.frame(#test = paste0("[", c(1:length(SS_zscore())), "]"),
                         z=SS_zscore(), r=SS_rels(), SE=SS_SE(), SEt = SS_SE()*sqrt(SS_rels()),
                         CI_low = SS_zscore() - SS_z()*SS_SE(), 
                         CI_up = SS_zscore() + SS_z()*SS_SE())
+      rownames(out) <- paste0("[", c(1:length(SS_zscore())), "]")
       if (input$SS_scale == "IQ") {
         out$X <- iqOut(out$z)
         out$X_CI_low <- iqOut(out$CI_low)
@@ -519,8 +522,8 @@ shinyServer(function(input, output, session) {
         out$X_CI_up <- pnorm(out$CI_up)
       }
       
-      out$CI = paste0("[", round(out$CI_low, 2), "; ", round(out$CI_up, 2), "]")
-      out$X_CI = paste0("[", round(out$X_CI_low, 2), "; ", round(out$X_CI_up, 2), "]")
+      out$z_CI = paste0("[", round(out$CI_low, 2), "; ", round(out$CI_up, 2), "]")
+      out$CI = paste0("[", round(out$X_CI_low, 2), "; ", round(out$X_CI_up, 2), "]")
       out
     })
     
@@ -529,12 +532,13 @@ shinyServer(function(input, output, session) {
       if (input$SS_apriori == "populace") {
         estimates <- SS_CItable()$r[1]*SS_CItable()$z[1]
         SE <- SS_CItable()$SE[1]
-        SE_true <- SS_CItable()$SE[1] * sqrt(SS_CItable()$r[1])
+        # SE_true <- SS_CItable()$SE[1] * sqrt(SS_CItable()$r[1])
+        SE_true <- SE
         apriori_odhad <- 0
       } else if (input$SS_apriori == "no") {
         estimates <- SS_CItable()$z[1]
         SE <- SS_CItable()$SE[1]
-        SE_true <- SS_CItable()$SE[1]
+        SE_true <- SE
         apriori_odhad <- NA
       } else {
         if (input$SS_scale == "IQ") {
@@ -555,17 +559,15 @@ shinyServer(function(input, output, session) {
         }
         estimates <- SS_CItable()$r[1]*SS_CItable()$z[1] + (1-SS_CItable()$r[1])*apriori_odhad
         SE <- SS_CItable()$SE[1]
-        SE_true <- sqrt(SS_CItable()$r[1]) * SE
+        # SE_true <- sqrt(SS_CItable()$r[1]) * SE
+        SE_true <- SE
+        
+        
         
       }
       
-      if (SE_true < .5) {
-        r_obs <- (1+sqrt(1-4*SE_true**2))/2
-      } else {
-        r_obs <- (1-sqrt(1-4*SE_true**2))/2 
-      }
       
-
+      r_obs <- (1+sqrt(1-4*(SE_true*sqrt(SS_CItable()$r[1]))**2))/2
       
       result <- data.frame(apriori = apriori_odhad, est=estimates, SE=SE, SE_true = SE_true, r = r_obs)
       
@@ -576,11 +578,8 @@ shinyServer(function(input, output, session) {
           (result$SE_true[i-1]**2)/(SS_CItable()$SE[i]**2 + result$SE_true[i-1]**2) * SS_CItable()$z[i]
         SE_x <- SS_CItable()$SE[i]
         SE_true_x <- 1/sqrt(1/SE_x**2 + 1/result$SE_true[i-1]**2)
-        if (SE_true_x < .5) {
-          r_x <- (1+sqrt(1-4*SE_true_x**2))/2
-        } else {
-          r_x <- (1-sqrt(1-4*SE_true_x**2))/2 
-        }
+        
+        r_x <- (1+sqrt(1-4*SE_true_x**2))/2
         
         result <- rbind(result, c(apriori_x, est_x, SE_x, SE_true_x, r_x))
         i <- i+1
@@ -614,7 +613,8 @@ shinyServer(function(input, output, session) {
         result$X_CI_low <- pnorm(result$CI_low)
         result$X_CI_up <- pnorm(result$CI_up)
       }
-      
+      result$CI = paste0("[", round(result$X_CI_low, 2), "; ", round(result$X_CI_up, 2), "]")
+      rownames(result) <- rownames(SS_CItable())
       result
       
 
@@ -630,14 +630,13 @@ shinyServer(function(input, output, session) {
     })
     
     SS_x2 <- reactive({
-      # x2 <- sum(((SS_CItable()$X-mean(SS_CItable()$X)) / SS_CItable()$SE)**2)
-      # x2 <- sum(((SS_CItable()$X-mean(SS_CItable()$X))/SS_CItable()$SE)**2)
-      
       M <- weighted.mean(SS_CItable()$z, 1/SS_CItable()$SE**2)
+      odhad = SS_result()$X[nrow(SS_result())]
+      CI <- SS_result()[nrow(SS_result()), 11]
       x2 <- sum(((SS_CItable()$z - M)/SS_CItable()$SE)**2)
       df <- nrow(SS_CItable()) - 1
       p <- pchisq(x2, df, lower.tail = F)
-      data.frame(M=M, x2=x2, df=df, p=p)
+      data.frame(odhad, CI, x2=x2, df=df, p=p)
     })
     
     
@@ -646,38 +645,95 @@ shinyServer(function(input, output, session) {
 # * output ----------------------------------------------------------------
 
 
-    
-    output$SS_table <- renderTable({
-      if (length(SS_SE()[!is.na(SS_SE())] > 0)) {
-        SS_CItable()
+    output$SS_warning1 <- renderText({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) <= .5)) {
+        "Upozornění: Alespoň jedna ze zadaných reliabilit je nižší než 0,5. 
+        V takovém případě výpočty nejsou identifikované a kalkulačka neposkytuje věrohodné výstupy."
       }
     })
     
+    output$SS_warning2 <- renderText({
+      if (length(SS_rels()[!is.na(SS_rels())] > 0) & (max(c(SS_rels(), 0), na.rm=T) > 1)) {
+        "Reliabilita se musí nacházet v rozmezí 0-1."
+      }
+    })
+    output$SS_warning3 <- renderText({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        if((SS_x2()$p < input$SS_p) & (nrow(SS_CItable()) > 1)) {
+          "Skóry se statisticky významně liší. Nedoporučujeme interpretovat kombinovaný skór!"
+        }
+      }
+    })
+    
+    
+    output$SS_table <- renderTable({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        SS_CItable()[, c(7, 2:3, 11)]
+      }
+    }, rownames = T)
+    
     output$SS_CIplot <- renderPlot({
-      if (length(SS_SE()[!is.na(SS_SE())] > 0)) {
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
         plot(SS_CItable()$X, type="b", xlab = "test", ylab = "skóre", lwd = 3, pch = 16, col = "darkorange", 
-             ylim = SS_ylims(), xlim = c(1, nrow(SS_result())+.2), xaxt="n")
+             ylim = SS_ylims(), xaxt="n", main = "Intervaly spolehlivosti měření")
+        axis(side = 1, at = c(1:nrow(SS_result())), labels = rownames(SS_result()))
         abline(h = weighted.mean(SS_CItable()$X, 1/SS_CItable()$SE**2), col= "gray", lty=2, lwd=2)
         arrows(x0 = c(1:nrow(SS_CItable())), y0 = SS_CItable()$X_CI_low, y1 = SS_CItable()$X_CI_up, 
                angle = 90, code = 3, lwd=2, length = .1)
         points(SS_CItable()$X, lwd = 3, pch = 21, bg = "darkorange", col = "white", cex = 3)
-        arrows(x0 = c(1:nrow(SS_CItable()))+.05, y0=SS_result()$X_CI_low, y1=SS_result()$X_CI_up, 
-               angle = 90, code = 3, lwd=1, length = .1)
-        lines(c(1:nrow(SS_CItable()))+.05, SS_result()$X, type="b", lwd = 3, pch = 21, bg = "darkblue", col = "darkgray", cex = 3)
-        points(c(1:nrow(SS_CItable()))+.05, SS_result()$X, lwd = 3, pch = 21, bg = "darkblue", col = "white", cex = 3)
-
       }
+    })
+    
+    output$SS_goplot <- renderPlot({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        plot(SS_result()$X, type="b", xlab = "test", ylab = "skóre", lwd = 3, pch = 16, col = "darkorange", 
+             ylim = c(min(SS_result()$X_CI_low), max(SS_result()$X_CI_up)), xaxt="n", 
+             main = "Vývoj intervalu měření")
+        axis(side = 1, at = c(1:nrow(SS_result())), labels = rownames(SS_result()))
+        polygon(x = c(c(1:nrow(SS_CItable())), c(nrow(SS_CItable()):1)), 
+                y = c(SS_result()$X_CI_low, SS_result()$X_CI_up[nrow(SS_CItable()):1]), 
+                col="gray90", border = NA)
+        arrows(x0 = c(1:nrow(SS_CItable())), y0=SS_result()$X_CI_low, y1=SS_result()$X_CI_up, 
+               angle = 90, code = 3, lwd=2, length = .1)
+        abline(h = SS_result()$X[length(SS_result()$X)], col= "gray", lty=2, lwd=2)
+        lines(c(1:nrow(SS_CItable())), SS_result()$X, type="b", lwd = 3, pch = 21, bg = "darkblue", col = "darkorange", cex = 3)
+        points(c(1:nrow(SS_CItable())), SS_result()$X, lwd = 3, pch = 21, bg = "darkblue", col = "white", cex = 3)
+        
+      }      
     })
     
     output$SS_result <- renderTable({
-      if (length(SS_SE()[!is.na(SS_SE())] > 0)) {
-        SS_result()
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        SS_result()[, c(8, 3:5, 11)]
       }
-
-    })
+    }, rownames = T)
     
     output$SS_x2 <- renderTable({
-      SS_x2()
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        SS_x2()
+      }
+    })
+    
+    output$SS_reliabilita <- renderPlot({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        plot(SS_result()$r, type="b", main = "Vývoj reliability během testování", 
+             ylim = c(0, 1), xaxt="n" ,ylab="reliabilita", xlab="test", lwd=3)
+        axis(side = 1, at = c(1:nrow(SS_result())), labels = rownames(SS_result()))
+      }
+    })
+    
+    
+    output$SS_point <- renderText({
+      SS_result()[nrow(SS_result()), 8]
+    })
+    output$SS_CItext <- renderText({
+      SS_result()[nrow(SS_result()), 11]
+    })
+    output$SS_Ntest <- renderText({
+      nrow(SS_result())
+    })
+    output$SS_pout <- renderText({
+      input$SS_p
     })
 
     
