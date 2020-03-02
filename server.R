@@ -177,7 +177,7 @@ shinyServer(function(input, output, session) {
   
   output$text_CI1 <- renderText({
     if (input$CI_scale == "P") {
-      paste(sep="", "<b>Standardní chyba měření:</b> SEM = ", round(SEM(), 2), " (v z-skórech)<br />",
+      paste(sep="", "<b>Standardní chyba měření:</b> SE = ", round(SEM(), 2), " (v z-skórech)<br />",
             "<b>", intWidth(), "% interval spolehlivosti:</b> CI = [", round(pnorm(CI()[1])*100, dist()[3]), ", ", 
             round(pnorm(CI()[2])*100, dist()[3]), "] <br />", 
             if (isTRUE(input$CI_regrese)) {
@@ -199,6 +199,25 @@ shinyServer(function(input, output, session) {
     }
     
   })
+  
+  output$text_CI2 <- renderTable({
+    q <- qnorm((100 + intWidth()) / 200)
+    SEdif <- sqrt(2)*SEM()
+    SEpred <- dist()[2] * sqrt(1 - input$CI_reliability**2)
+    
+    CIdif <- expT()[2] + c(-1,1)*q*SEdif
+    CIpred <- expT()[1] + c(-1,1)*q*SEpred
+    
+    result <- data.frame(
+      SE = c(SEdif, SEpred),
+      CI = c(
+        paste0("[", paste0(round(CIdif, 2), collapse = "; "), "]"),
+        paste0("[", paste0(round(CIpred, 2), collapse = "; "), "]")
+      ),
+      row.names = c("rozdíl", "predikce")
+    )
+    result
+  }, rownames = T)
   
   output$plot_CI <- renderPlot({  # graf
     
@@ -648,7 +667,7 @@ shinyServer(function(input, output, session) {
     output$SS_warning1 <- renderText({
       if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) <= .5)) {
         "Upozornění: Alespoň jedna ze zadaných reliabilit je nižší než 0,5. 
-        V takovém případě výpočty nejsou identifikované a kalkulačka neposkytuje věrohodné výstupy."
+        V takovém případě výpočty nejsou identifikované a kalkulačka nemůže poskytnout věrohodný výstup."
       }
     })
     
@@ -662,6 +681,14 @@ shinyServer(function(input, output, session) {
         if((SS_x2()$p < input$SS_p) & (nrow(SS_CItable()) > 1)) {
           "Skóry se statisticky významně liší. Nedoporučujeme interpretovat kombinovaný skór!"
         }
+      }
+    })
+    
+    output$SS_ok <- reactive({
+      if (length(SS_SE()[!is.na(SS_SE())] > 0) & (min(c(SS_rels(), 8), na.rm=T) > .5) & (max(c(SS_rels(), 0), na.rm=T) <= 1)) {
+        1
+      } else {
+        0
       }
     })
     
@@ -735,7 +762,216 @@ shinyServer(function(input, output, session) {
     output$SS_pout <- renderText({
       input$SS_p
     })
+    
+    
 
+# Rozdíl skórů ------------------------------------------------------------
+
+    RS_z <- reactive(-qnorm(input$RS_p/2))
+    
+    
+    ## distribuce
+    RS_dist <- reactive({
+      if(input$RS_scale == "IQ") {
+        c(100, 15, 0)
+      } else if(input$RS_scale == "T") {
+        c(50, 10, 0)
+      } else if (input$RS_scale == "z") {
+        c(0, 1, 2)
+      } else if (input$RS_scale == "W") {
+        c(10, 3, 0)
+      } else if (input$RS_scale == "P") {
+        c(0, 1, 0)
+      } else {
+        c(input$RS_M_manual, input$RS_SD_manual, 2)
+      }
+    })
+    
+    RS_X <- reactive({
+      c(input$RS_X1, input$RS_X2)
+    })
+    RS_r <- reactive({
+      RS_r <- c(input$RS_r1, input$RS_r2)
+      if(is.na(input$RS_r2)) {
+        RS_r[2] <- RS_r[1]
+      }
+      RS_r
+    })
+    
+    ## 1. pozorovaný skór
+    RS_obs1 <- reactive({
+      if(input$RS_scale == "P") {
+        if (input$RS_X1 > 0 & input$RS_X1 < 100) {
+          x <- qnorm(input$RS_X1/100)
+        } else if (input$RS_X1 == 0) {
+          x <- qnorm(.0025)
+        } else {
+          x <- qnorm(.9975)
+        }
+      } else {
+        x <- input$RS_X1
+      }
+      tr <- x*RS_r()[1] + RS_dist()[1]*(1-RS_r()[1])
+      se <- RS_dist()[2]*sqrt(1-RS_r()[1])
+      set <- se*sqrt(RS_r()[1])
+      c(x, tr, se, set)
+    })
+    
+    ## 2. pozorovaný skór
+    RS_obs2 <- reactive({
+      if(input$RS_scale == "P") {
+        if (input$RS_X1 > 0 & input$RS_X1 < 100) {
+          x <- qnorm(input$RS_X2/100)
+        } else if (input$RS_X2 == 0) {
+          x <- qnorm(.0025)
+        } else {
+          x <- qnorm(.9975)
+        }
+      } else {
+        x <- input$RS_X2
+      }
+      tr <- x*RS_r()[2] + RS_dist()[1]*(1-RS_r()[2])
+      se <- RS_dist()[2]*sqrt(1-RS_r()[2])
+      set <- se*sqrt(RS_r()[2])
+      c(x, tr, se, set)
+    })
+    
+    
+    ## statisticky významný rozdíl
+    RS_Sdif <- reactive({
+      se_dif <- sqrt(RS_obs1()[3]**2 + RS_obs2()[3]**2)
+      
+      if (isFALSE(input$RS_regM)) {
+        dif <- RS_obs2()[1] - RS_obs1()[1]
+        exp <- RS_obs1()[1]
+        CI <- paste0("[", paste0(round(exp + c(-1,1)*se_dif*RS_z(), 2), collapse = "; "), "]")  
+      } else {
+        dif <- sqrt(RS_r()[2]) * (RS_obs2()[1]-RS_dist()[1]) - sqrt(RS_r()[1]) * (RS_obs1()[1]-RS_dist()[1])
+        exp <- NA
+        CI <- NA
+      }
+      z_dif <- dif/se_dif
+      p_dif <- pnorm(abs(z_dif), lower.tail = F)*2
+      if(is.na(p_dif)) {
+        word_dif <- "Pro výpočet zadejte oba skóry a reliabilitu alespoň prvního měření."
+      } else if(p_dif < input$RS_p) {
+        word_dif <- "Obě měření se statisticky významně liší."
+      } else {
+        word_dif <- ""
+      }
+      RS_Sdif <- data.frame(exp, CI, dif, se_dif, z_dif, p_dif, word_dif)
+
+      names(RS_Sdif) <- c("E(T2)", "CI", "rozdíl", "SE", "z", "p", "")
+      rownames(RS_Sdif) <- "statistická významnost"
+      RS_Sdif
+      
+    })
+    
+    ## klinicky významný rozdíl
+    RS_Kdif <- reactive({
+        exp <- input$RS_cor * RS_obs1()[1] + (1-input$RS_cor) * RS_dist()[1]
+        dif <- RS_obs2()[1] - exp
+        se_dif <- RS_dist()[2] * sqrt(1 - input$RS_cor)
+        CI <- paste0("[", paste0(round(exp + c(-1,1)*se_dif*RS_z(), 2), collapse = "; "), "]")
+        z_dif <- dif/se_dif
+        p_dif <- pnorm(abs(z_dif), lower.tail = F)*2
+        if (is.na(p_dif)) {
+          word_dif <- "Pro výpočet zadejte skóry obou testů a jejich korelaci."
+        } else if(p_dif < input$RS_p) {
+          word_dif <- "Obě měření se klinicky významně liší."
+        } else {
+          word_dif <- ""
+        }
+        RS_Kdif <- data.frame(exp, CI, dif, se_dif, z_dif, p_dif, word_dif)
+        names(RS_Kdif) <- c("E(T2)", "CI", "rozdíl", "SE", "z", "p", "")
+        rownames(RS_Kdif) <- "klinická významnost"
+        RS_Kdif
+    })
+    
+    ## Predikce
+    RS_pred <- reactive({
+      exp <- RS_obs1()[2]
+      dif <- RS_obs2()[1] - exp
+      se_dif <- RS_dist()[2] * sqrt(1 - RS_r()[1]**2)
+      CI <- paste0("[", paste0(round(exp + c(-1,1)*se_dif*RS_z(), 2), collapse = "; "), "]")
+      z_dif <- dif/se_dif
+      p_dif <- pnorm(abs(z_dif), lower.tail = F)*2
+      if(is.na(p_dif)) {
+        word_dif <- "Pro výpočet zadejte oba skóry a reliabilitu alespoň prvního měření."
+      } else if(p_dif < input$RS_p) {
+        word_dif <- "Retest je statisticky významně odlišný od pretestu."
+      } else {
+        word_dif <- ""
+      }
+      RS_pred <- data.frame(exp, CI, dif, se_dif, z_dif, p_dif, word_dif)
+      names(RS_pred) <- c("E(T2)", "CI", "rozdíl", "SE", "z", "p", "")
+      rownames(RS_pred) <- "test-retest"
+      RS_pred
+    })
+    
+    RS_scores <- reactive({
+      RS_scores <- as.data.frame(rbind(RS_obs1(), RS_obs2()))
+      names(RS_scores) <- c("X", "T", "SE", "SE_t")
+      RS_scores$CI_low <- RS_scores$X - RS_z() * RS_scores$SE
+      RS_scores$CI_up  <- RS_scores$X + RS_z() * RS_scores$SE
+      
+      RS_scores$CI_low_reg <- RS_scores$'T' - RS_z() * RS_scores$SE
+      RS_scores$CI_up_reg  <- RS_scores$'T' + RS_z() * RS_scores$SE
+      
+      if (input$RS_scale == "P") {
+        RS_scores$CI_low <- round(pnorm(RS_scores$CI_low)*100)
+        RS_scores$CI_up  <- round(pnorm(RS_scores$CI_up)*100)
+        RS_scores$CI_low_reg <- round(pnorm(RS_scores$CI_low)*100)
+        RS_scores$CI_up_reg  <- round(pnorm(RS_scores$CI_up)*100)
+      }
+      
+      RS_scores$CI = paste0("[", round(RS_scores$CI_low, 2), "; ", round(RS_scores$CI_up, 2), "]")
+      RS_scores$CI_reg = paste0("[", round(RS_scores$CI_low_reg, 2), "; ", round(RS_scores$CI_up_reg, 2), "]")
+      rownames(RS_scores) <- c("1. test", "2. test")
+      RS_scores
+    })
+
+    
+    
+
+# * output ----------------------------------------------------------------
+    
+    
+    output$RS_warn1 <- renderText({
+      if (input$RS_cor > sqrt(RS_r()[1]*RS_r()[2]) & !is.na(input$RS_cor) & !is.na(RS_obs1()[3])) {
+        "Pozor: Korelace testů je vyšší, než by odpovídalo jejich reliabilitám. Výsledky nejsou důvěryhodné!"
+      } else {
+        NULL
+      }
+    })
+    
+    output$RS_result <- renderTable({
+      rbind(RS_Sdif(), RS_Kdif(), RS_pred())
+    }, rownames = T)
+    
+    output$RS_cis <- renderTable({
+      RS_scores()[c(1:3, 9:10)]
+    }, rownames = T)
+    
+    output$RS_plot <- renderPlot({
+      sirka <- RS_dist()[1] + c(-3,3)*RS_dist()[2]
+      cols = c("lightblue", "lightgreen")
+      if (!is.na(RS_scores()[2,1]) & !is.na(RS_r()[2])) {
+        plot(c(RS_scores()[1,1], RS_scores()[2,1]), c(1,0), 
+             xlim=c(min(RS_scores()[, 5]), max(RS_scores()[, 6])), ylim = c(-.2, 1.2),
+             pch=16, col = cols, xlab = "skóre", ylab = "test", yaxt="n", cex=5)
+        arrows(x0 = RS_scores()[1, 5], x1 = RS_scores()[1, 6], y0 = 1, angle = 90, length = .15, 
+               col = cols[1], code=3, lwd=3)
+        arrows(x0 = RS_scores()[2, 5], x1 = RS_scores()[2, 6], y0 = 0, angle = 90, length = .15, 
+               col = cols[2], code=3, lwd=3)
+        axis(2, c(1,0), c("1", "2"), tick=F, las=2, cex.axis=2)
+      } else {
+        NULL
+      }
+    }, height = 250)
+
+    
+    
     
   
   

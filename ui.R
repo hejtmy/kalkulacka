@@ -89,8 +89,11 @@ tabPanel("Interval spolehlivosti", value = "CI",
 # * mainpanel CI ----------------------------------------------------------
 
   mainPanel(
+    h3("Interval spolehlivosti"),
     (htmlOutput("text_CI1", placeholder=NULL)),
     plotOutput("plot_CI"),
+    h3("Intervaly spolehlivosti pro rozdíl"),
+    tableOutput("text_CI2"),
     hr(),
     h3("Nápověda"),
     HTML("<p>Tato kalkulačka vypočítá interval spolehlivosti jednoho skóre při jednom měření, 
@@ -115,6 +118,13 @@ tabPanel("Interval spolehlivosti", value = "CI",
          <p>Pokud jste zadali skóre v percentilech, jsou tyto percentily prvně převedeny na z-skóre, 
          následně jsou provedeny veškeré výpočty a jejich výsledky (kromě standardní chyby měření) jsou převedeny zpět 
          na percentil.</p>
+         <p>Kromě toho kalkulačka spočítá i dva další intervaly spolehlivosti, které naleznete v tabulce. 
+         <strong>Chyba rozdílu </strong>udává, jak široký je interval spolehlivosti pro výsledek jiného měření tím stejným
+         testem za předpokladu, že se pravé skóry obou testů neliší. Pokud nový skór (např. výsledek jiné osoby) 
+         leží mimo tento interval, jsou oba skóry statisticky významně odlišné. <br />
+         <strong>Chyba predikce</strong> odhaduje, v jakém rozmezí by měl ležet retestový výsledek respondenta 
+         za předpokladu, že se jeho pravý skóry mezi měřeními nezměnil. Pokud leží nový výsledek mimo 
+         uvedený interval, výkon respondenta se změnil.</p>
          <p><em><strong>Upozornění:</strong> Použitý výpočet je založen na postupu klasické testové teorie. 
          Výpočet není vhodný pro testy, které byly konstruované s využití teorie odpovědi na položku nebo Raschova modelu 
          (u nás např. Woodcock-Johnson či Krátký inteligenční test.</em></p>"),
@@ -139,10 +149,23 @@ tabPanel("Interval spolehlivosti", value = "CI",
          "<p>Posledním krokem je odhad vlastního intervalu spolehlivosti \\(CI\\) (&bdquo;Confidence Interval&ldquo;). 
          Ten je odhadnut okolo odhadu pravého skóre \\(E(T)\\)
          (je-li tato funkce vypnutá, pak přímo okolo skóre pozorovaného \\(X\\)) jako 
-         $$CI_{w} = E(T) \\pm z_{w}SE$$
+         $$CI = E(T) \\pm z_{w}SE$$
          kde \\(w\\) označuje šířku intervalu (např. v procentech) 
          a \\(z_{w}\\) je příslušný kvantil normální rozdělení. Pro běžné hodnoty je tento kvantil roven 
-         \\(z_{90\\%}=1,64\\), \\(z_{95\\%}=1,96\\) a \\(z_{99\\%}=2,58\\).</p>"),
+         \\(z_{90\\%}=1,64\\), \\(z_{95\\%}=1,96\\) a \\(z_{99\\%}=2,58\\).</p>
+         <p>Interval pro rozdíl \\(CI_{\\Delta}\\) je spočítán okolo pozorovaného skóre podle vzorce, tedy
+         
+         $$ CI_{\\Delta}=X \\pm z_{w} SE_{\\Delta} $$
+         
+         kde \\(SE_\\Delta\\) se je standardní chyba rozdílu odhadnutá s pomocí standardní chyby měření 
+         (viz dřívější vzorce) jako
+         $$SE_\\Delta=\\sqrt{2}SE$$
+         Interval spolehlivosti predikce \\(CI_{pred}\\) je spočítán okolo odhadu pravého skóre 
+         \\(E(T))\\) jako
+         $$CI_{pred} = E(T) \\pm z_{w}SE_{pred}$$
+         kde \\(SE_{pred}\\) je standardní chyba predikce:
+         $$SE_{pred}=SD\\sqrt{1-r_{xx'}^2}$$
+         </p>"),
     
     HTML("<p>Autorem kalkulačky je Hynek Cígler (&copy; 2020) s mírným přispěním Martina Šmíry.</p>"),
     hr(),
@@ -342,8 +365,8 @@ tabPanel("Složené skóre",
              conditionalPanel("input.SS10 !== null", 
                               HTML("<p><em>Dosáhli jste maximálního počtu deseti testů.</em></p>")), 
              
-             checkboxInput("advanced", "Pokročilé možnosti"),
-             conditionalPanel("input.advanced == 1", 
+             checkboxInput("SS_advanced", "Pokročilé možnosti"),
+             conditionalPanel("input.SS_advanced == 1", 
                               numericInput("SS_p", label = "Statistická významnost", value = .05, min = 0, max=1, step = .01),
                               radioButtons(inputId="SS_apriori", label = "Typ apriorní informace:", 
                                            choices = list("populační" = "populace", 
@@ -394,7 +417,7 @@ tabPanel("Složené skóre",
 
                      hr(),
                      h3("Nápověda"),
-                     p("Tato kalkulačka nabízí možnost &bdquo;zkombinovat&ldquo; více testů tak, aby uživatel 
+                     p("Tato kalkulačka nabízí možnost zkombinovat více testů tak, aby uživatel 
                           získal jediný skór s jediným intervalem spolehlivosti. Vyberte si požadovanou jednotku, kterou používáte 
                        (všechny testy musí být zadané ve shodných jednotkách) a zadejte skóre a reliabilitu prvního testu. 
                        Poté se zobrazí pole pro zadání pozorovaného skóre a reliability druhého testu, a tak dál; 
@@ -473,8 +496,79 @@ tabPanel("Složené skóre",
 
 # Rozdílové skóry -----------------------------------------------------------
 
-tabPanel("Rozdílové skóry", 
-         titlePanel("Statisticky a klinicky významná změna"))
+tabPanel(
+  "Rozdílové skóry", 
+  titlePanel("Statisticky a klinicky významná změna"),
+
+# * sidebar ---------------------------------------------------------------
+
+  sidebarLayout(
+    sidebarPanel(
+      radioButtons(inputId="RS_scale", label="Vyberte použité skóre:",
+                   choices = list("IQ skóry (100, 15)" = "IQ",
+                                  "T skóry (50, 10)" = "T",
+                                  "z-skóry (0, 1)" = "z", 
+                                  "Vážené skóry (10, 3)" = "W",
+                                  "Percentily" = "P",
+                                  "jiné" = "jednotka")),
+      conditionalPanel(condition = "input.RS_scale == 'jednotka'",
+                       numericInput("RS_M_manual", "Zadejte průměr:", value = 100),
+                       numericInput("RS_SD_manual", "Zadejte směrodatnou odchylku:", value = 15)),
+      hr(),
+      h4("1. test"),
+      p(tags$small("Skóre 1. osoby, testu nebo pretestu.")),
+      tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+               numericInput("RS_X1", label = "Skóre 1", value = NA)),
+      tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+               numericInput("RS_r1", label = "reliabilita", value = NA, min = 0, max = 1, step = .01)),
+      hr(),
+      h4("2. Test"),
+      p(tags$small("Skóre druhého testu."), br(), 
+        tags$small("Pokud nezadáte reliabilitu druhého testu, bude použita reliabilita testu prvního.", br(),
+                   "Pro účely test-retest rozdílu bude vždy použita reliabilita prvního testu")),
+      tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+               numericInput("RS_X2", label = "Skóre 2", value = NA)),
+      tags$div(style = "display: inline-block;vertical-align:top; width: 100px;", 
+               numericInput("RS_r2", label = "reliabilita", value = NA, min = 0, max = 1, step = .01)),
+      numericInput("RS_cor", label = "korelace testů", value = NA, min = 0, max = 1, step = .01),
+      checkboxInput("RS_advanced", "Pokročilé možnosti"),
+      conditionalPanel("input.RS_advanced == 1", 
+                       numericInput("RS_p", label = "Statistická významnost", 
+                                    value = .05, min = 0, max=1, step = .01), 
+                       checkboxInput("RS_regM", label = "Použít regresi k průměru 
+                                     u statisticky významného rozdílu", value = TRUE))
+    ),
+
+# * mainpanel --------------------------------------------------------------
+
+    mainPanel(
+      h4(textOutput("RS_warn1"), style="color: red;"),
+      h4("Tabulka 1: Rozdíl mezi skóry"),
+      tableOutput("RS_result"),
+      p(tags$small("E(T2) – očekávané skóre druhého testu podle testu prvního; 
+                   CI – interval spolehlivosti pro druhý test; 
+                   rozdíl – pozorovaný rozdíl mezi testy;
+                   SE – standardní chyba rozdílu; 
+                   z – testová statistika rozdílu;
+                   p – statistická významnost. 
+                   Pokud není vypnut regresní odhad pro statisticky významný rozdíl, 
+                   nedává smysl interval spolehlivosti tohoto rozdílu.")),
+      h4("Tabulka 2: Přehled skórů"),
+      tableOutput("RS_cis"),
+      p(tags$small("X – pozorované skóre v daném testu; 
+                   T – odhad pravého skóre daného testu;
+                   SE – standardní chyba měření;
+                   CI – interval spolehlivosti měření (bez zohlednění regrese k průměru);
+                   CI_reg – interval spolehlivosti měření (po zohlednění regrese k průměru)")),
+      plotOutput("RS_plot"),
+      hr(),
+      h3("Nápověda")
+    )
+  )
+)
+
+
+
 
 ), 
 hr(),
