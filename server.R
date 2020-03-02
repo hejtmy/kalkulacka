@@ -801,7 +801,9 @@ shinyServer(function(input, output, session) {
     ## 1. pozorovaný skór
     RS_obs1 <- reactive({
       if(input$RS_scale == "P") {
-        if (input$RS_X1 > 0 & input$RS_X1 < 100) {
+        if (is.na(input$RS_X1)) {
+          x <- NA
+        } else if (input$RS_X1 > 0 & input$RS_X1 < 100) {
           x <- qnorm(input$RS_X1/100)
         } else if (input$RS_X1 == 0) {
           x <- qnorm(.0025)
@@ -820,7 +822,9 @@ shinyServer(function(input, output, session) {
     ## 2. pozorovaný skór
     RS_obs2 <- reactive({
       if(input$RS_scale == "P") {
-        if (input$RS_X1 > 0 & input$RS_X1 < 100) {
+        if (is.na(input$RS_X2)) {
+          x <- NA
+        } else if (input$RS_X2 > 0 & input$RS_X2 < 100) {
           x <- qnorm(input$RS_X2/100)
         } else if (input$RS_X2 == 0) {
           x <- qnorm(.0025)
@@ -852,6 +856,13 @@ shinyServer(function(input, output, session) {
       }
       z_dif <- dif/se_dif
       p_dif <- pnorm(abs(z_dif), lower.tail = F)*2
+      
+      if(input$RS_scale == "P") {
+        dif <- round(pnorm(dif)*100)
+        exp <- round(pnorm(dif)*100)
+        CI <- paste0("[", paste0(round(pnorm(exp + c(-1,1)*se_dif*RS_z())*100), collapse = "; "), "]")  
+      }
+      
       if(is.na(p_dif)) {
         word_dif <- "Pro výpočet zadejte oba skóry a reliabilitu alespoň prvního měření."
       } else if(p_dif < input$RS_p) {
@@ -882,6 +893,11 @@ shinyServer(function(input, output, session) {
         } else {
           word_dif <- ""
         }
+        if(input$RS_scale == "P") {
+          exp <- round(pnorm(exp)*100)
+          dif <- round(pnorm(dif)*100)
+          CI <- paste0("[", paste0(round(pnorm(exp + c(-1,1)*se_dif*RS_z())*100), collapse = "; "), "]")  
+        }
         RS_Kdif <- data.frame(exp, CI, dif, se_dif, z_dif, p_dif, word_dif)
         names(RS_Kdif) <- c("E(T2)", "CI", "rozdíl", "SE", "z", "p", "")
         rownames(RS_Kdif) <- "klinická významnost"
@@ -903,6 +919,11 @@ shinyServer(function(input, output, session) {
       } else {
         word_dif <- ""
       }
+      if(input$RS_scale == "P") {
+        exp <- round(pnorm(exp)*100)
+        dif <- round(pnorm(dif)*100)
+        CI <- paste0("[", paste0(round(pnorm(exp + c(-1,1)*se_dif*RS_z())*100), collapse = "; "), "]")  
+      }
       RS_pred <- data.frame(exp, CI, dif, se_dif, z_dif, p_dif, word_dif)
       names(RS_pred) <- c("E(T2)", "CI", "rozdíl", "SE", "z", "p", "")
       rownames(RS_pred) <- "test-retest"
@@ -911,14 +932,16 @@ shinyServer(function(input, output, session) {
     
     RS_scores <- reactive({
       RS_scores <- as.data.frame(rbind(RS_obs1(), RS_obs2()))
-      names(RS_scores) <- c("X", "T", "SE", "SE_t")
+      names(RS_scores) <- c("X", "E(T)", "SE", "SE_t")
       RS_scores$CI_low <- RS_scores$X - RS_z() * RS_scores$SE
       RS_scores$CI_up  <- RS_scores$X + RS_z() * RS_scores$SE
       
-      RS_scores$CI_low_reg <- RS_scores$'T' - RS_z() * RS_scores$SE
-      RS_scores$CI_up_reg  <- RS_scores$'T' + RS_z() * RS_scores$SE
+      RS_scores$CI_low_reg <- RS_scores$'E(T)' - RS_z() * RS_scores$SE
+      RS_scores$CI_up_reg  <- RS_scores$'E(T)' + RS_z() * RS_scores$SE
       
       if (input$RS_scale == "P") {
+        RS_scores$X <- round(pnorm(RS_scores$X)*100)
+        RS_scores$'E(T)' <- round(pnorm(RS_scores$'E(T)')*100)
         RS_scores$CI_low <- round(pnorm(RS_scores$CI_low)*100)
         RS_scores$CI_up  <- round(pnorm(RS_scores$CI_up)*100)
         RS_scores$CI_low_reg <- round(pnorm(RS_scores$CI_low)*100)
@@ -945,6 +968,25 @@ shinyServer(function(input, output, session) {
       }
     })
     
+    output$RS_warn2 <- renderText({
+      if (((input$RS_r1 < 0 | input$RS_r1 > 1) & !is.na(input$RS_r1)) | 
+          ((input$RS_r2 < 0 | input$RS_r2 > 1) & !is.na(input$RS_r2)) | 
+          ((input$RS_cor < -1 | input$RS_cor > 1) & !is.na(input$RS_cor)))  {
+        "Reliability se musí nacházet v rozmezí mezi 0 a 1. Korelace testů se musí nacházet v rozmezí -1 až 1."
+      } else {
+        NULL
+      }
+    })
+    
+    output$RS_warn3 <- renderText({
+      if ((input$RS_X1 < 0 | input$RS_X1 > 100) & input$RS_scale == "P" & !is.na(input$RS_X1)) {
+        "Percentil musí ležet v rozmezí 0 až 100."
+      } else {
+      }
+    })
+    
+
+    
     output$RS_result <- renderTable({
       rbind(RS_Sdif(), RS_Kdif(), RS_pred())
     }, rownames = T)
@@ -954,11 +996,15 @@ shinyServer(function(input, output, session) {
     }, rownames = T)
     
     output$RS_plot <- renderPlot({
-      sirka <- RS_dist()[1] + c(-3,3)*RS_dist()[2]
+      if(input$RS_scale == "P") {
+        sirka <- c(0, 100)
+      } else {
+        sirka <- c(min(RS_scores()[, 5]), max(RS_scores()[, 6]))
+      }
       cols = c("lightblue", "lightgreen")
       if (!is.na(RS_scores()[2,1]) & !is.na(RS_r()[2])) {
         plot(c(RS_scores()[1,1], RS_scores()[2,1]), c(1,0), 
-             xlim=c(min(RS_scores()[, 5]), max(RS_scores()[, 6])), ylim = c(-.2, 1.2),
+             xlim=sirka, ylim = c(-.2, 1.2),
              pch=16, col = cols, xlab = "skóre", ylab = "test", yaxt="n", cex=5)
         arrows(x0 = RS_scores()[1, 5], x1 = RS_scores()[1, 6], y0 = 1, angle = 90, length = .15, 
                col = cols[1], code=3, lwd=3)

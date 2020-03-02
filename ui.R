@@ -542,10 +542,13 @@ tabPanel(
 # * mainpanel --------------------------------------------------------------
 
     mainPanel(
-      h4(textOutput("RS_warn1"), style="color: red;"),
+      h4(textOutput("RS_warn1", inline = T),
+         textOutput("RS_warn2", inline = T),
+         textOutput("RS_warn3", inline = T), style="color: red;"),
       h4("Tabulka 1: Rozdíl mezi skóry"),
       tableOutput("RS_result"),
-      p(tags$small("E(T2) – očekávané skóre druhého testu podle testu prvního; 
+      p(tags$small(tags$strong("Pozor, u klinické významnosti záleží na pořadí testů!"), br(),
+                   "E(T2) – očekávané skóre druhého testu podle testu prvního; 
                    CI – interval spolehlivosti pro druhý test; 
                    rozdíl – pozorovaný rozdíl mezi testy;
                    SE – standardní chyba rozdílu; 
@@ -560,7 +563,7 @@ tabPanel(
                    SE – standardní chyba měření;
                    CI – interval spolehlivosti měření (bez zohlednění regrese k průměru);
                    CI_reg – interval spolehlivosti měření (po zohlednění regrese k průměru)")),
-      plotOutput("RS_plot"),
+      plotOutput("RS_plot", height=250),
       hr(),
       h3("Nápověda")
     )
