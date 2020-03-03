@@ -149,7 +149,7 @@ tabPanel("Interval spolehlivosti", value = "CI",
          "<p>Posledním krokem je odhad vlastního intervalu spolehlivosti \\(CI\\) (&bdquo;Confidence Interval&ldquo;). 
          Ten je odhadnut okolo odhadu pravého skóre \\(E(T)\\)
          (je-li tato funkce vypnutá, pak přímo okolo skóre pozorovaného \\(X\\)) jako 
-         $$CI = E(T) \\pm z_{w}SE$$
+         $$CI_w = E(T) \\pm z_{w}SE$$
          kde \\(w\\) označuje šířku intervalu (např. v procentech) 
          a \\(z_{w}\\) je příslušný kvantil normální rozdělení. Pro běžné hodnoty je tento kvantil roven 
          \\(z_{90\\%}=1,64\\), \\(z_{95\\%}=1,96\\) a \\(z_{99\\%}=2,58\\).</p>
@@ -565,7 +565,82 @@ tabPanel(
                    CI_reg – interval spolehlivosti měření (po zohlednění regrese k průměru)")),
       plotOutput("RS_plot", height=250),
       hr(),
-      h3("Nápověda")
+      h3("Nápověda"),
+      HTML("<p>Tato kalkulačka poskytuje informace o rozdílnosti dvou skórů. 
+           Uživatel může použít celkem tři různé rozdílové skóry:</p>
+           <ol><li><strong>Statisticky významný rozdíl:</strong> Testuje hypotézu, zda se dva skóry od sebe 
+           dostatečně liší natolik, abychom mohli konstatovat, že je jeden vyšší než druhý. 
+           Pokud je test signifikantní, znamená to, že s určitou mírou jistoty (typicky 5 %) jeden skór je vyšší než druhý.<br />
+           Příklad 1: <em>Existuje rozdíl mezi skórem fluidní a krystalizované inteligence daného respondenta?</em><br />
+           Příklad 2: <em>Dosáhla v inteligenčním testu vyššího skóre Anežka nebo Bedřich?</em></li>
+           <li><strong>Klinicky významný rozdíl:</strong> Testuje hypotézu, zda se dva skóry od sebe liší více než u náhodně 
+           vybraného respondenta z populace. Pokud je test signifikantní, znamená to, že větší rozdíl skórů má jen velmi malé 
+           množství osob (typicky 5 %), což může být diagnosticky důležitá informace.<br />
+           Příklad: <em>Je rozdíl fluidní a krystalizované inteligence daného člověka věcně významný?</em></li>
+           <li><strong>Rozdíl test-retest (chyba predikce):</strong> Ověřuje, zda se výkon respondenta změnil v čase. 
+           Pokud je test signifikantní, znamená to, že se výkon daného respondenta v retetu s určitou mírou jistoty (typicky 5 %) 
+           změnil od prvního měření (pretestu).<br />
+           Příklad: <em>Došlo u respondenta ke změně výkonu v čase mezi oběma měřeními?</em></li></ol>
+           <p>Uživatel má k dispozici dvě tabulky. Zatímco však druhá tabulka obsahuje obyčejné intervaly spolehlivosti pro 
+           jedno měření (s pozorovaným skóre, odhadem skóru pravého, standardní chybou měření a intervaly spolehlivosti 
+           při zvážení a při nezvážení regrese k průměru), první tabulka poskytuje přímo výsledky rozdílových skórů.</p>
+           <p>V prvním sloupci, E(T), je k dispozici očekávaná (resp. nejpravděpodobnější) hodnota druhého testu při zadaných 
+           reliabilitách a skóre prvního testu. Okolo této hodnoty se pohybují naměřené skóry, přičemž odlišnost je způsobena 
+           chybou měření. Ve druhém sloupci je k dispozici interval spolehlivosti pro druhý test. Pokud skóre druhého testu 
+           leží vně tohoto intervalu, je rozdíl statisticky významný na zadané hladině spolehlivosti. Ve sloupci rozdíl je čistě jen rozdíl
+           očekávané a pozorované hodnoty se standardní chybou zobrazenou ve sloupci SE. Ve sloupci z je testová statistika a 
+           ve sloupci označeném jako p je statistická významnost tohoto rozdílu. Poslední sloupec pak poskytuje slovní interpretaci 
+           případného rozdílu.</p>
+           <p>Pro výpočet <strong>statisticky významného rozdílu</strong> je nutné zadat skór prvního a druhého měření 
+           a reliabilitu testů. Pokud mají obě měření stejnou reliabilitu (např. porovnáváme výkon dvou osob 
+           v jednom testu), stačí zadat reliabilitu pouze prvního testu, ta se použije i pro druhé měření.</p>
+           <p>Pro Výpočet <strong>klinicky významného rozdílu</strong> je nutné zadat korelaci obou testů, reliability však nejsou nutné</p>
+           <p>Pro výpočet <strong>rozdílu test-retest</strong> je potřeba zadat skóre obou testů a reliabilitu prvního testu. 
+           V tomto případě je reliabilita druhého testu ignorovaná, protože předpokládáme, že jde o dvě měřením tím stejným testem 
+           se shodnou reliabilitou. Pokud jste při retestu měřili jiným testem, použijte statisticky významný rozdíl.</p>
+           <p>V pokročilých možnostech můžete změnit požadovanou hladinu statistické významnosti. 
+           Je možné rovněž ovlivnit výpočet statisticky významného rozdílu. V původním nastavení je použit regresní postup 
+           navržený Cíglerem a Šmírou (2015, vzorec 15). V tomto případě je srovnáván rozdíl pravých skórů. Tuto možnost lze 
+           vypnout, pak jsou srovnávány přímo skóry pozorované. Nejste-li si jistí, kterou z variant použít, zvolte přednastavenou 
+           možnost (a nechte políčko zatrhnuté). V takovém případě však není k dispozici interval spolehlivosti pro druhý test.</p>
+           <p>Uživatel aplikace má k dispozici rovněž i graf zobrazující obě měření včetně jejich intervalu spolehlivosti 
+           (bez zvážení regrese k průměru, která by mohla být v tomto případě matoucí).</p>"),
+      hr(),
+      h3("Postup výpočtu"),
+      h4("Obecný postup všech výpočtů"),
+      HTML("<p>Ve všech případech je spočítán rozdíl očekávaného \\(E(B|A)\\) a pozorovaného skóre \\(B\\) 
+           ve druhém testu \\(X_{\\Delta}\\) 
+           (s výjimkou statisticky významného rozdílu při použití regresní metody, viz níže). 
+           Protože tento očekávaný rozdíl je vždy nula (\\(H_0: X_{\\Delta}=0\\)), testová statistika \\(z\\) je spočítána 
+           za předpokladu normálního rozložení jako podíl tohoto rozdílu a standardní chyby příslušného rozdílu:
+           $$z=\\frac{X_{\\Delta}}{SE}$$
+           Pro tuto testovou statistiku je pak dohledána příslušná pravděpodovnost (ve všech případech je použit oboustranný test). 
+           Standardní chyba je využita i pro výpočet intervalu spolehlivosti s příslušným kvantilem normálního rozložení \\(z_w\\) 
+           podle vzorce
+           $$CI_w=z_w SE$$</p>"),
+      h4("Statisticky významný rozdíl"),
+      HTML("<p>V případě použití regresní metody (Cígler a Šmíra, 2015, vzorec 15) je pozorovaný rozdíl spočítán jako 
+           $$X_{\\Delta}=\\sqrt{r_{aa'}}(A-M)-\\sqrt{r_{bb'}}(B-M)$$
+           kde \\(r_{aa'})\\ a \\(r_{bb'}\\) jsou reliability obou testů \\(A\\) a \\(B\\) a \\(M\\) je průměr použitých jednotek.</p>
+           <p>Pokud není použita regresní metoda, je rozdíl spočítán jako prostý rozdíl pozorovaných skórů
+           $$X_{\\Delta}=A-B$$</p>
+           <p>Standardní chyba statisticky významného rozdílu je pak v obou případech odhadnuta jako 
+           $$SE_{stat.} = SD\\sqrt(2-r_{aa'}-r_{bb'})$$
+           SD je směrodatná odchylka použitých jednotek.</p>"),
+      h4("Klinicky významný rozdíl"),
+      HTML("<p>Očekávané skóre \\(E(B|A)\\) ve druhém testu je spočítáno s využitím skóre prvního testu \\(A\\) 
+           a jejich korelace \\(r_{ab}\\) jako 
+           $$E(B|A) = r_{ab}A + (1-r_{ab})M$$
+           Standardní chyba klinického rozdílu je potom
+           $$SE = SD\\sqrt{1-r_{ab}^2}$$</p>"),
+      h4("Test-retest (chyba predikce)"),
+      HTML("<p>Postup je analogický předchozímu příkladu s tím rozdílem, že namísto korelace obou testů je použita 
+           reliabilita testu (společná pro oba testy). <br/>
+           Očekávané skóre \\(E(B|A)\\) ve druhém testu je spočítáno s využitím skóre prvního testu \\(A\\) 
+           a jejich společné reliability \\(r_{aa'}=r_{bb'}\\) jako 
+           $$E(B|A) = r_{aa'}A + (1-r_{aa'})M$$
+           Standardní chyba klinického rozdílu je potom
+           $$SE = SD\\sqrt{1-r_{aa'}^2}$$</p>")
     )
   )
 )

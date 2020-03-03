@@ -205,16 +205,17 @@ shinyServer(function(input, output, session) {
     SEdif <- sqrt(2)*SEM()
     SEpred <- dist()[2] * sqrt(1 - input$CI_reliability**2)
     
-    CIdif <- expT()[2] + c(-1,1)*q*SEdif
-    CIpred <- expT()[1] + c(-1,1)*q*SEpred
+    CIdif <- round(expT()[2] + c(-1,1)*q*SEdif, dist()[3])
+    CIpred <- round(expT()[1] + c(-1,1)*q*SEpred, dist()[3])
     
     result <- data.frame(
+      X = round(expT()[2:1], dist()[3]),
       SE = c(SEdif, SEpred),
       CI = c(
         paste0("[", paste0(round(CIdif, 2), collapse = "; "), "]"),
         paste0("[", paste0(round(CIpred, 2), collapse = "; "), "]")
       ),
-      row.names = c("rozdíl", "predikce")
+      row.names = c("rozdíl dvou skórů", "predikce (retest)")
     )
     result
   }, rownames = T)
