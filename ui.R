@@ -7,7 +7,9 @@ inline_numericInput=function(ni){
 
 year <- substr(Sys.Date(), 1, 4)
 
-shinyUI(fluidPage(titlePanel(img(src="logo.png"), windowTitle="Diagnostická kalkulačka"),
+shinyUI(fluidPage(conditionalPanel("input.panels == 'title'",
+                                   titlePanel(img(src="logo.png"), 
+                                              windowTitle="Diagnostická kalkulačka")),
                   navbarPage(title = "Diagnostická kalkulačka", 
                              theme = shinythemes::shinytheme("cerulean"),
                              id = "panels",
@@ -15,7 +17,8 @@ shinyUI(fluidPage(titlePanel(img(src="logo.png"), windowTitle="Diagnostická kal
                              
 # Home page ---------------------------------------------------------------
                              
-tabPanel("Domů",
+tabPanel("Domů", 
+         value = "title",
          withMathJax(),
          fluidRow(column(h2("Diagnostická kalkulačka"), 
                          p("Diagnostická kalkulačka zjednodušuje život všem psychologům, 
@@ -47,21 +50,11 @@ tabPanel("Domů",
              h4("Převod skórů"), 
              p("Pokud potřebujete převést např. percentily na IQ skóry či T-skóry, nebo naopak např. 
                steny či staniny na percentily či vážené skóry používané v inteligenčních testech, 
-               využijete právě tuto kalkulačku."), width = 5),
-           column(
-             h4("Složené skóre"),
-             p("Administrovali jste více testů, měřicích ten samý rys, a chcete se dozvědět „souhrnný“ výsledek – tedy 
-               výsledek agregovaný napříč všemi měřeními? Prostý průměr není 
-               nejlepší nápad, zvlášť, pokud každý test má jinou reliabilitu. Využijte raději kalkulačku složeného skóre – 
-               navíc se dozvíte i to, zda se jednotlivá měření liší (a měří tedy zřejmě něco jiného), 
-               nebo zda jsou jednotlivé naměřené skóry pravděpodobně stejné."),
-             h4("Rozdílové skóry"),
-             p("Máte více skórů a nevíte, zda se skutečně liší? Kalkulačka rozdílových skórů vám to jednoduše řekne. 
-               Na výběr máte mezi rozdílem dvou osob nebo dvou výsledků u jediného člověka, tedy test-retest, nebo tzv. statisticky
-               a klinicky významné rozdíly."), width = 5)),
-         h3("Další užitečné pomůcky"),
-         p("Kromě kalkulaček dostupných na této stránce můžete využít i další jednoduché nástroje z naší dílny:"),
-         HTML("
+               využijete právě tuto kalkulačku."), 
+             hr(),
+             h3("Další užitečné pomůcky"),
+             p("Kromě kalkulaček dostupných na této stránce můžete využít i další jednoduché nástroje z naší dílny:"),
+             HTML("
 <ul>
 <li><strong><a href='http://fssvm6.fss.muni.cz/height/'>Simulace měření výšky</a>:</strong> Co by se stalo, kdybychom měřili 
 lidskou výšku psychologickými nástroji? Jak by se projevila chyba měření? Jednoduchá aplikace vám nasimuluje výsledky 
@@ -72,7 +65,19 @@ v psychologii.</li>
 vždy záleží na náhodě; na tom, jací lidé se dostali do vzorku. Že zvláště u malých norem a pro extrémní skóry může být výběrová 
 chyba skutečně velká, to vám ukáže jednoduchá aplikace.</li>
 </ul>
-              "),
+              "), width = 5),
+           column(
+             h4("Složené skóre"),
+             p("Administrovali jste více testů, měřicích ten samý rys, a chcete se dozvědět „souhrnný“ výsledek – tedy 
+               výsledek agregovaný napříč všemi měřeními? Prostý průměr není 
+               nejlepší nápad, zvlášť, pokud každý test má jinou reliabilitu. Využijte raději kalkulačku složeného skóre – 
+               navíc se dozvíte i to, zda se jednotlivá měření liší (a měří tedy zřejmě něco jiného), 
+               nebo zda jsou jednotlivé naměřené skóry pravděpodobně stejné."),
+             h4("Rozdílové skóry"),
+             p("Máte více skórů a nevíte, zda se skutečně liší? Kalkulačka rozdílových skórů vám to jednoduše řekne. 
+               Na výběr máte mezi rozdílem dvou osob nebo dvou výsledků u jediného člověka, tedy test-retest, nebo tzv. statisticky
+               a klinicky významné rozdíly."), 
+             width = 5)),
          p(strong("Kalkulačku citujte jako:"), paste0("Cígler, H., & Šmíra, M. (", year,")"), 
            em("Diagnostická kalkulačka"),
            "(Verze 0.1.0).", 
