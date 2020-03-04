@@ -5,6 +5,8 @@ inline_numericInput=function(ni){
   tags$div( class="form-inline",ni)
 }
 
+year <- substr(Sys.Date(), 1, 4)
+
 shinyUI(fluidPage(titlePanel(img(src="logo.png"), windowTitle="Diagnostická kalkulačka"),
                   navbarPage(title = "Diagnostická kalkulačka", 
                              theme = shinythemes::shinytheme("cerulean"),
@@ -30,8 +32,55 @@ tabPanel("Domů",
                            "K veškerým výpočtům je k dispozici podrobný postup, kód této kalkulačk je", 
                            a("veřejně dostupný.", href="https://github.com/hynekcigler/kalkulacka")),
                          p("Ve stručnosti jsou jednotlivé postupy popsány i v zápatí každé kalkulačky tak, 
-                           aby běžný uživatel měl alespoň orientační přehled nad všemi funkcemi."),
-                         width = 5))),
+                           aby měl uživatel přehled nad způsobem výpočtu."),
+                         width = 5)),
+         hr(),
+         h3("Dostupné kalkulačky"),
+         fluidRow(
+           column(
+             h4("Interval spolehlivosti"),
+             p("Po zvolení jednotky, zadání naměřeného skóre a reliability testu máte k dispozici 
+               interval spolehlivosti pro vašeho respondenta. Kromě běžného intervalu spolehlivosti měření 
+               získáte navíc i interval predikce (v jakém rozmezí bude ležet skór retestu, pokud se výkon 
+               klienta nezmění?) a rozdílu (v jakém rozmezí by ležel skór jiného probanda se stejnou úrovní 
+               schopnosti?)."),
+             h4("Převod skórů"), 
+             p("Pokud potřebujete převést např. percentily na IQ skóry či T-skóry, nebo naopak např. 
+               steny či staniny na percentily či vážené skóry používané v inteligenčních testech, 
+               využijete právě tuto kalkulačku."), width = 5),
+           column(
+             h4("Složené skóre"),
+             p("Administrovali jste více testů, měřicích ten samý rys, a chcete se dozvědět „souhrnný“ výsledek – tedy 
+               výsledek agregovaný napříč všemi měřeními? Prostý průměr není 
+               nejlepší nápad, zvlášť, pokud každý test má jinou reliabilitu. Využijte raději kalkulačku složeného skóre – 
+               navíc se dozvíte i to, zda se jednotlivá měření liší (a měří tedy zřejmě něco jiného), 
+               nebo zda jsou jednotlivé naměřené skóry pravděpodobně stejné."),
+             h4("Rozdílové skóry"),
+             p("Máte více skórů a nevíte, zda se skutečně liší? Kalkulačka rozdílových skórů vám to jednoduše řekne. 
+               Na výběr máte mezi rozdílem dvou osob nebo dvou výsledků u jediného člověka, tedy test-retest, nebo tzv. statisticky
+               a klinicky významné rozdíly."), width = 5)),
+         h3("Další užitečné pomůcky"),
+         p("Kromě kalkulaček dostupných na této stránce můžete využít i další jednoduché nástroje z naší dílny:"),
+         HTML("
+<ul>
+<li><strong><a href='http://fssvm6.fss.muni.cz/height/'>Simulace měření výšky</a>:</strong> Co by se stalo, kdybychom měřili 
+lidskou výšku psychologickými nástroji? Jak by se projevila chyba měření? Jednoduchá aplikace vám nasimuluje výsledky 
+hypotetického dotazníku výšky na základě vaší skutečné výšky v centimetrech a zadané reliability testu. Kalkulačka je v angličtině.</li>
+<li><strong><a href='http://fssvm6.fss.muni.cz/vyska/'>Skutečný dotazník výšky</a></strong>, který ilustruje běžné postupy měření 
+v psychologii.</li>
+<li><strong><a href='http://fssvm6.fss.muni.cz/norms/'>Výběrová chyba norem:</a></strong> Žádné normy nejsou bezchybné, 
+vždy záleží na náhodě; na tom, jací lidé se dostali do vzorku. Že zvláště u malých norem a pro extrémní skóry může být výběrová 
+chyba skutečně velká, to vám ukáže jednoduchá aplikace.</li>
+</ul>
+              "),
+         p(strong("Kalkulačku citujte jako:"), paste0("Cígler, H., & Šmíra, M. (", year,")"), 
+           em("Diagnostická kalkulačka"),
+           "(Verze 0.1.0).", 
+           "Masarykova univerzita.", 
+           a("http://kalkulacka.testforum.cz"))
+         
+         
+         ),
 
 
 # Confidence interval -----------------------------------------------------
@@ -167,7 +216,7 @@ tabPanel("Interval spolehlivosti", value = "CI",
          $$SE_{pred}=SD\\sqrt{1-r_{xx'}^2}$$
          </p>"),
     
-    HTML("<p>Autorem kalkulačky je Hynek Cígler (&copy; 2020) s mírným přispěním Martina Šmíry.</p>"),
+    p(paste0("Autorem kalkulačky je Hynek Cígler (©", year, ") s mírným přispěním Martina Šmíry.")),
     hr(),
     h4("Zdroje"),
     HTML("<ul><li>Cígler, H., & Šmíra, M. (2015). 
@@ -277,7 +326,7 @@ tabPanel("Převod skórů",
                   </tbody>
                   </table>"),
              hr(),
-             HTML("<p>Autorem této kalkulačky je Martin Šmíra (&copy; 2014) s mírným přispěním Hynka Cíglera.</p>")
+             p(paste0("Autorem této kalkulačky je Martin Šmíra (", year, ") s mírným přispěním Hynka Cíglera."))
            )
          )),
 
@@ -486,7 +535,12 @@ tabPanel("Složené skóre",
                          
                          s přibližně \\(\\chi^2\\) rozložením a \\(n-1\\) stupni volnosti, kde \\(n\\) udává počet zadaných testů. 
                          \\(E(X)\\) je potom očekávané skóre, odhadnuté jako vážený průměr všech dílčích testů 
-                         $$E(X)=\\frac{\\sum_{i=1}^{n} SE_i^{-2}X_i}{\\sum_{i=1}^{n}SE_i^{-2}}$$"))
+                         $$E(X)=\\frac{\\sum_{i=1}^{n} SE_i^{-2}X_i}{\\sum_{i=1}^{n}SE_i^{-2}}$$")
+                       ),
+                     hr(),
+                     p(paste0("Autorem této kalkulačky je Hynek Cígler (©", year, ")."))
+                     
+                     
 
                      )
 
@@ -640,7 +694,15 @@ tabPanel(
            a jejich společné reliability \\(r_{aa'}=r_{bb'}\\) jako 
            $$E(B|A) = r_{aa'}A + (1-r_{aa'})M$$
            Standardní chyba klinického rozdílu je potom
-           $$SE = SD\\sqrt{1-r_{aa'}^2}$$</p>")
+           $$SE = SD\\sqrt{1-r_{aa'}^2}$$</p>"),
+      h3("Zdroje"),
+      HTML("<p>Cígler, H., & Šmíra, M. (2015). 
+         Chyba měření a odhad pravého skóru: Připomenutí některých postupů Klasické testové teorie. 
+        <i>Testfórum, 4</i>(6), 67-84. 
+        doi:<a href='https://doi.org/10.5817/TF2015-6-104'>10.5817/TF2015-6-104</a></p>"),
+      hr(),
+      p(paste0("Autorem kalkulačky je Hynek Cígler (©", year, ")."))
+      
     )
   )
 )
@@ -650,7 +712,7 @@ tabPanel(
 
 ), 
 hr(),
-div("©", textOutput("yearcopy", inline = T), "Hynek Cígler & Martin Šmíra", br(),
+div("©", year, "Hynek Cígler & Martin Šmíra", br(),
 "Katedra psychologie, Fakulta sociálních studií", br(),
      "Masarykova univerzita | ", tags$a("kalkulacka@testforum.cz", href="mailto:kalkulacka@testforum.cz"), 
     style = 'margin-left: 30px; margin-bottom: 30px;')))

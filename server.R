@@ -88,8 +88,6 @@ staninOut <- function(zSkor) {
 
 shinyServer(function(input, output, session) {
   
-  output$yearcopy <- renderText(substr(Sys.Date(), 1, 4))
-  
 
 # Interval spolehlivosti --------------------------------------------------
   
