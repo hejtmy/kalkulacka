@@ -36,7 +36,9 @@ tabPanel("Domů",
                            a("veřejně dostupný.", href="https://github.com/hynekcigler/kalkulacka")),
                          p("Ve stručnosti jsou jednotlivé postupy popsány i v zápatí každé kalkulačky tak, 
                            aby měl uživatel přehled nad způsobem výpočtu."),
-                         width = 5)),
+                         width = 3),
+                  column(a(img(src="logoFSScol.png", width="100%"), href="http://psych.fss.muni.cz"),
+                         width = 4)),
          hr(),
          h3("Dostupné kalkulačky"),
          fluidRow(
@@ -717,7 +719,8 @@ tabPanel(
 
 ), 
 hr(),
-div("©", year, "Hynek Cígler & Martin Šmíra", br(),
+div(a(img(src="logoFSScol.png", width="180px", style="float: left; margin-top: -10px; margin-right: 20px;"), href="http://psych.fss.muni.cz"),
+"©", year, "Hynek Cígler & Martin Šmíra", br(),
 "Katedra psychologie, Fakulta sociálních studií", br(),
      "Masarykova univerzita | ", tags$a("kalkulacka@testforum.cz", href="mailto:kalkulacka@testforum.cz"), 
-    style = 'margin-left: 30px; margin-bottom: 30px;')))
+    style = 'margin-left: 30px; margin-bottom: 50px;')))
