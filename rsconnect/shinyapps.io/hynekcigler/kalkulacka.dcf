@@ -5,8 +5,8 @@ account: hynekcigler
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 1896569
-bundleId: 2847891
+bundleId: 3886411
 url: https://hynekcigler.shinyapps.io/kalkulacka/
-when: 1583261981.00136
+when: 1605907131.6082
 asMultiple: FALSE
 asStatic: FALSE

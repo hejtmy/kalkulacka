@@ -82,9 +82,11 @@ chyba skutečně velká, to vám ukáže jednoduchá aplikace.</li>
              width = 5)),
          p(strong("Kalkulačku citujte jako:"), paste0("Cígler, H., & Šmíra, M. (", year,")"), 
            em("Diagnostická kalkulačka"),
-           "(Verze 0.1.0).", 
+           "(Verze 0.1.1).", 
            "Masarykova univerzita.", 
-           a("http://kalkulacka.testforum.cz"))
+           a("http://kalkulacka.testforum.cz")),
+         p(strong("Bugs and reports:"), "Případné chyby hlaste prostřednictvím rozhraní", 
+           a("GitHub", href="https://github.com/hynekcigler/kalkulacka/issues"))
          
          
          ),

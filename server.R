@@ -881,7 +881,7 @@ shinyServer(function(input, output, session) {
     RS_Kdif <- reactive({
         exp <- input$RS_cor * RS_obs1()[1] + (1-input$RS_cor) * RS_dist()[1]
         dif <- RS_obs2()[1] - exp
-        se_dif <- RS_dist()[2] * sqrt(1 - input$RS_cor)
+        se_dif <- RS_dist()[2] * sqrt(1 - input$RS_cor**2)
         CI <- paste0("[", paste0(round(exp + c(-1,1)*se_dif*RS_z(), 2), collapse = "; "), "]")
         z_dif <- dif/se_dif
         p_dif <- pnorm(abs(z_dif), lower.tail = F)*2
