@@ -33,11 +33,11 @@ tabPanel("Domů",
                          p("Diagnostickou kalkulačku vyvíjí", 
                            strong("psychometrický tým Katedry psychologie Fakulty sociálních studií."), 
                            "K veškerým výpočtům je k dispozici podrobný postup, kód této kalkulačk je", 
-                           a("veřejně dostupný.", href="https://github.com/hynekcigler/kalkulacka")),
+                           a("veřejně dostupný.", href="https://github.com/hynekcigler/kalkulacka", target="_blank")),
                          p("Ve stručnosti jsou jednotlivé postupy popsány i v zápatí každé kalkulačky tak, 
                            aby měl uživatel přehled nad způsobem výpočtu."),
                          width = 3),
-                  column(a(img(src="logoFSScol.png", width="100%"), href="http://psych.fss.muni.cz"),
+                  column(a(img(src="logoFSScol.png", width="100%"), href="http://psych.fss.muni.cz", target="_blank"),
                          width = 4)),
          hr(),
          h3("Dostupné kalkulačky"),
@@ -58,12 +58,12 @@ tabPanel("Domů",
              p("Kromě kalkulaček dostupných na této stránce můžete využít i další jednoduché nástroje z naší dílny:"),
              HTML("
 <ul>
-<li><strong><a href='http://fssvm6.fss.muni.cz/height/'>Simulace měření výšky</a>:</strong> Co by se stalo, kdybychom měřili 
+<li><strong><a href='http://fssvm6.fss.muni.cz/height/', target='_blank'>Simulace měření výšky</a>:</strong> Co by se stalo, kdybychom měřili 
 lidskou výšku psychologickými nástroji? Jak by se projevila chyba měření? Jednoduchá aplikace vám nasimuluje výsledky 
 hypotetického dotazníku výšky na základě vaší skutečné výšky v centimetrech a zadané reliability testu. Kalkulačka je v angličtině.</li>
-<li><strong><a href='http://fssvm6.fss.muni.cz/vyska/'>Skutečný dotazník výšky</a></strong>, který ilustruje běžné postupy měření 
+<li><strong><a href='http://fssvm6.fss.muni.cz/vyska/', target='_blank'>Skutečný dotazník výšky</a></strong>, který ilustruje běžné postupy měření 
 v psychologii.</li>
-<li><strong><a href='http://fssvm6.fss.muni.cz/norms/'>Výběrová chyba norem:</a></strong> Žádné normy nejsou bezchybné, 
+<li><strong><a href='http://fssvm6.fss.muni.cz/norms/', target='_blank'>Výběrová chyba norem:</a></strong> Žádné normy nejsou bezchybné, 
 vždy záleží na náhodě; na tom, jací lidé se dostali do vzorku. Že zvláště u malých norem a pro extrémní skóry může být výběrová 
 chyba skutečně velká, to vám ukáže jednoduchá aplikace.</li>
 </ul>
@@ -84,9 +84,9 @@ chyba skutečně velká, to vám ukáže jednoduchá aplikace.</li>
            em("Diagnostická kalkulačka"),
            "(Verze 0.1.1).", 
            "Masarykova univerzita.", 
-           a("http://kalkulacka.testforum.cz")),
+           a("http://kalkulacka.testforum.cz", href = "http://kalkulacka.testforum.cz")),
          p(strong("Bugs and reports:"), "Případné chyby hlaste prostřednictvím rozhraní", 
-           a("GitHub", href="https://github.com/hynekcigler/kalkulacka/issues"))
+           a("GitHub", href="https://github.com/hynekcigler/kalkulacka/issues", target="_blank"))
          
          
          ),
@@ -231,11 +231,11 @@ tabPanel("Interval spolehlivosti", value = "CI",
     HTML("<ul><li>Cígler, H., & Šmíra, M. (2015). 
          Chyba měření a odhad pravého skóru: Připomenutí některých postupů Klasické testové teorie. 
          <i>Testfórum, 4</i>(6), 67-84. 
-         doi:<a href='https://doi.org/10.5817/TF2015-6-104'>10.5817/TF2015-6-104</a></li>
+         doi:<a href='https://doi.org/10.5817/TF2015-6-104', target='_blank'>10.5817/TF2015-6-104</a></li>
          <li>Dudek, F.J. (1979). 
          The Continuing Misinterpretation of the Standard Error of Measurement. 
          <i>Psychological Bulletin 86</i>(2), 335-337. 
-         doi:<a href='https://doi.org/10.5817/10.1037/0033-2909.86.2.335'>10.1037/0033-2909.86.2.335</a></li></ul>")
+         doi:<a href='https://doi.org/10.5817/10.1037/0033-2909.86.2.335', target='_blank'>10.1037/0033-2909.86.2.335</a></li></ul>")
   )
 )),
 
@@ -708,7 +708,7 @@ tabPanel(
       HTML("<p>Cígler, H., & Šmíra, M. (2015). 
          Chyba měření a odhad pravého skóru: Připomenutí některých postupů Klasické testové teorie. 
         <i>Testfórum, 4</i>(6), 67-84. 
-        doi:<a href='https://doi.org/10.5817/TF2015-6-104'>10.5817/TF2015-6-104</a></p>"),
+        doi:<a href='https://doi.org/10.5817/TF2015-6-104', target='_blank'>10.5817/TF2015-6-104</a></p>"),
       hr(),
       p(paste0("Autorem kalkulačky je Hynek Cígler (©", year, ")."))
       
@@ -721,7 +721,8 @@ tabPanel(
 
 ), 
 hr(),
-div(a(img(src="logoFSScol.png", width="180px", style="float: left; margin-top: -10px; margin-right: 20px;"), href="http://psych.fss.muni.cz"),
+div(a(img(src="logoFSScol.png", width="180px", style="float: left; margin-top: -10px; margin-right: 20px;"), 
+      href="http://psych.fss.muni.cz", target="_blank"),
 "©", year, "Hynek Cígler & Martin Šmíra", br(),
 "Katedra psychologie, Fakulta sociálních studií", br(),
      "Masarykova univerzita | ", tags$a("kalkulacka@testforum.cz", href="mailto:kalkulacka@testforum.cz"), 
