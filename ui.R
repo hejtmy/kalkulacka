@@ -1,5 +1,6 @@
 library(shiny)
 library(shinyWidgets)
+library(shinythemes)
 
 inline_numericInput=function(ni){
   tags$div( class="form-inline",ni)

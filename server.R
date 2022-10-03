@@ -4,12 +4,7 @@ library(shiny)
 library(ggplot2)
 library(grid)
 
-
-
-
 # Funkce: Převod skórů ----------------------------------------------------
-
-`%then%` <- shiny:::`%OR%`
 
 # Error message
 chybovaHlaska <- "POZOR, byla zadána neplatná vstupní hodnota.
@@ -953,9 +948,6 @@ shinyServer(function(input, output, session) {
       RS_scores
     })
 
-    
-    
-
 # * output ----------------------------------------------------------------
     
     
@@ -983,8 +975,6 @@ shinyServer(function(input, output, session) {
       } else {
       }
     })
-    
-
     
     output$RS_result <- renderTable({
       rbind(RS_Sdif(), RS_Kdif(), RS_pred())
@@ -1015,11 +1005,4 @@ shinyServer(function(input, output, session) {
       }
     }, height = 250)
 
-    
-    
-    
-  
-  
-  
-  
 })
